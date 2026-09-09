@@ -1793,29 +1793,42 @@
   });
 
   function buildSheetsPayload(){
-    var cationRows = [], anionRows = [];
     var ts = new Date().toISOString();
-    experimentList.forEach(function(exp){
+    var experiments = experimentList.map(function(exp){
+      var cationSentences = [], cationRaw = [];
       CATIONS.forEach(function(c){
         var d = diffCation(c, experimentBaseline.state, exp.state);
         if(d.changed){
-          cationRows.push([ts, exp.label, CATION_LABEL_LOCAL[c.key], d.mM0.toFixed(3), d.mM1.toFixed(3), d.kind, sentenceForCation(c,d)]);
+          cationSentences.push(sentenceForCation(c, d));
+          cationRaw.push({cation:CATION_LABEL_LOCAL[c.key], mM0:+d.mM0.toFixed(3), mM1:+d.mM1.toFixed(3), kind:d.kind});
         }
       });
       var t0 = computeAnionTotals(experimentBaseline.state), t1 = computeAnionTotals(exp.state);
+      var cat0 = computeCationTotals(experimentBaseline.state), cat1 = computeCationTotals(exp.state);
+      var anionRaw = [];
       ANIONS_ALL.forEach(function(a){
         var mM0=t0.meq[a]/META[a].valence, mM1=t1.meq[a]/META[a].valence;
         var share0=t0.totalAnMeq>0?t0.meq[a]/t0.totalAnMeq*100:0, share1=t1.totalAnMeq>0?t1.meq[a]/t1.totalAnMeq*100:0;
         if(Math.abs(mM1-mM0)<1e-6 && Math.abs(share1-share0)<0.05) return;
-        anionRows.push([ts, exp.label, META[a].label, mM0.toFixed(3), mM1.toFixed(3), (mM1-mM0).toFixed(3), share0.toFixed(1), share1.toFixed(1)]);
+        anionRaw.push({anion:META[a].label, mM0:+mM0.toFixed(3), mM1:+mM1.toFixed(3), delta:+(mM1-mM0).toFixed(3), share0:+share0.toFixed(1), share1:+share1.toFixed(1)});
       });
+      var cationPoolRaw = [];
+      CAT_KEYS.forEach(function(k){
+        var mM0 = experimentBaseline.state[k].mM, mM1 = exp.state[k].mM;
+        var share0 = cat0.total>0?cat0.mag[k]/cat0.total*100:0, share1 = cat1.total>0?cat1.mag[k]/cat1.total*100:0;
+        if(Math.abs(mM1-mM0)<1e-6 && Math.abs(share1-share0)<0.05) return;
+        cationPoolRaw.push({cation:CATION_LABEL_LOCAL[k], mM0:+mM0.toFixed(3), mM1:+mM1.toFixed(3), delta:+(mM1-mM0).toFixed(3), share0:+share0.toFixed(1), share1:+share1.toFixed(1)});
+      });
+      return {
+        label: exp.label,
+        cationSentences: cationSentences,
+        cationRaw: cationRaw,
+        aggregateLines: aggregateAnionLines(experimentBaseline.state, exp.state),
+        anionRaw: anionRaw,
+        cationPoolRaw: cationPoolRaw
+      };
     });
-    return {
-      cationHeader: ["timestamp","experiment","cation","mM_before","mM_after","classification","detail"],
-      cationRows: cationRows,
-      anionHeader: ["timestamp","experiment","anion","mM_before","mM_after","delta_mM","share_before_pct","share_after_pct"],
-      anionRows: anionRows
-    };
+    return { timestamp: ts, baselineLabel: experimentBaseline.label, experiments: experiments };
   }
 
   document.getElementById("sheetsSendBtn").addEventListener("click", function(){
@@ -1831,7 +1844,7 @@
     // access setting, not a silent server-side failure.
     fetch(url, { method:"POST", mode:"no-cors", body: JSON.stringify(payload) })
       .then(function(){
-        sheetsStatus.textContent = "Sent — check the sheet's \"Cations\" and \"Anions\" tabs. (The browser can't confirm delivery across origins; if rows don't appear, double check the URL and that the deployment is set to run as you, accessible by \"Anyone.\")";
+        sheetsStatus.textContent = "Sent — check \"Raw Data,\" \"Cation Changes (annotated),\" and \"Charts\" in the sheet, plus the summary Google Doc (linked from the sheet's \"Info\" tab). The browser can't confirm delivery across origins; if nothing shows up, double check the URL and that the deployment is set to run as you, accessible by \"Anyone.\"";
       })
       .catch(function(err){
         sheetsStatus.textContent = "Request failed before it even left the browser: "+err.message;
