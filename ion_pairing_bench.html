@@ -1,0 +1,1415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ion pairing bench</title>
+<style>
+  :root{
+    --paper:#EDF1EE;
+    --paper-raised:#F5F8F5;
+    --ink:#1C2420;
+    --ink-soft:#4C5750;
+    --line:#C7D0C9;
+    --line-soft:#DDE4DE;
+    --cl:#B8823A;
+    --no3:#1F6F63;
+    --so4:#6E4C86;
+    --mes:#3B6E90;
+    --cit:#8B3A42;
+    --h2po4:#7D8A3A;
+    --hpo4:#5B4E96;
+    --steel:#35524C;
+    --steel-dim:#5C766F;
+    --warn:#A5432F;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:2rem 1.25rem 4rem;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+
+  header{margin-bottom:1.75rem;}
+  header h1{font-size:1.5rem;font-weight:650;letter-spacing:-0.01em;margin:0 0 0.35rem;}
+  header p{margin:0;color:var(--ink-soft);font-size:0.92rem;max-width:62ch;line-height:1.5;}
+
+  .legend{display:flex;gap:1.1rem;margin-top:0.9rem;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--ink-soft);}
+  .swatch{width:10px;height:10px;border-radius:2px;flex:none;}
+
+  .presets{display:flex;gap:0.5rem;margin-top:1.1rem;flex-wrap:wrap;}
+  .presets button{
+    font:inherit;font-size:0.82rem;padding:0.4rem 0.75rem;
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:5px;
+    color:var(--steel);cursor:pointer;
+  }
+  .presets button:hover{border-color:var(--steel-dim);}
+  .presets button:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+
+  .display-toggle{display:flex;align-items:center;gap:0.6rem;margin-top:0.9rem;}
+  .display-toggle-label{font-size:0.8rem;color:var(--ink-soft);}
+  .toggle-group{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;}
+  .toggle-group button{
+    font:inherit;font-size:0.8rem;padding:0.32rem 0.75rem;background:var(--paper-raised);
+    border:none;color:var(--steel);cursor:pointer;border-right:1px solid var(--line);
+  }
+  .toggle-group button:last-child{border-right:none;}
+  .toggle-group button.active{background:var(--steel);color:#fff;}
+  .toggle-group button:hover:not(.active){background:var(--paper);}
+  .toggle-group button:focus-visible{outline:2px solid var(--steel);outline-offset:-2px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-top:1.75rem;}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+
+  .overview{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-top:1.75rem;}
+  @media (max-width:640px){.overview{grid-template-columns:1fr;}}
+  .overview-card{background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem 1.15rem;}
+  .overview-card h2{font-size:0.9rem;font-weight:650;margin:0 0 0.15rem;}
+  .overview-card .sub{font-size:0.78rem;color:var(--ink-soft);margin:0 0 0.6rem;}
+  .overview-legend{display:flex;flex-wrap:wrap;gap:0.3rem 0.9rem;margin-top:0.6rem;}
+  .overview-legend span.olg{display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;color:var(--ink-soft);}
+  .overview-legend .olg-pct{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);}
+
+  .recipe-panel{
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;
+    padding:1.1rem 1.2rem 1.25rem;
+  }
+  .recipe-panel h2{font-size:0.95rem;font-weight:650;margin:0 0 0.15rem;}
+  .recipe-panel .sub{font-size:0.8rem;color:var(--ink-soft);margin:0 0 0.9rem;max-width:66ch;line-height:1.45;}
+  .recipe-controls{display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;margin-bottom:0.7rem;}
+  .recipe-controls select{
+    font:inherit;font-size:0.85rem;padding:0.35rem 0.5rem;border:1px solid var(--line);
+    border-radius:5px;background:#fff;color:var(--ink);
+  }
+  .recipe-controls button{
+    font:inherit;font-size:0.85rem;padding:0.42rem 0.9rem;background:var(--steel);
+    color:#fff;border:none;border-radius:5px;cursor:pointer;
+  }
+  .recipe-controls button:hover{background:var(--steel-dim);}
+  .recipe-controls select:focus-visible, .recipe-controls button:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  #recipeText{
+    width:100%;min-height:7.5rem;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:0.82rem;padding:0.6rem 0.7rem;border:1px solid var(--line);border-radius:6px;
+    background:#fff;color:var(--ink);resize:vertical;line-height:1.5;
+  }
+  #recipeText:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .recipe-status{margin:0.7rem 0 0;font-size:0.8rem;color:var(--ink-soft);line-height:1.5;}
+  .recipe-status.attention{color:var(--warn);}
+
+  .rubric{margin-top:1rem;}
+  .rubric summary{
+    cursor:pointer;font-size:0.85rem;color:var(--steel);font-weight:600;
+    padding:0.2rem 0;user-select:none;
+  }
+  .rubric summary:focus-visible{outline:2px solid var(--steel);outline-offset:2px;}
+  table.rubric-table{width:100%;border-collapse:collapse;margin-top:0.7rem;font-size:0.82rem;}
+  table.rubric-table th, table.rubric-table td{
+    text-align:left;padding:0.35rem 0.5rem;border-top:1px solid var(--line-soft);vertical-align:top;
+  }
+  table.rubric-table thead th{color:var(--ink-soft);font-weight:600;border-top:none;font-size:0.76rem;}
+  table.rubric-table td:nth-child(4){font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .salt-copy{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.8rem;
+    background:var(--paper);border:1px solid var(--line);border-radius:4px;
+    padding:0.1rem 0.4rem;cursor:pointer;color:var(--ink);
+  }
+  .salt-copy:hover{border-color:var(--steel-dim);}
+  .rubric-alias{font-size:0.76rem;color:var(--ink-soft);font-style:italic;}
+
+  .card{background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;padding:1rem 1.1rem 1.15rem;}
+  .card-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:0.6rem;}
+  .formula{font-size:1.05rem;font-weight:650;}
+  .formula sup{font-size:0.7em;}
+  .mM-field{display:flex;align-items:baseline;gap:0.35rem;font-size:0.82rem;color:var(--ink-soft);}
+  .mM-field input{
+    width:4.2rem;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:0.85rem;padding:0.2rem 0.35rem;border:1px solid var(--line);border-radius:4px;
+    background:#fff;color:var(--ink);
+  }
+  .mM-field input:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+
+  .mag-row{display:flex;align-items:center;gap:0.5rem;margin:0 0 0.75rem;}
+  .mag-row .mag-edge{font-size:0.7rem;color:var(--ink-soft);flex:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .mag-row input[type="range"]{flex:1;accent-color:var(--steel);}
+  .mag-row .mag-factor{
+    width:4.2rem;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:0.8rem;padding:0.2rem 0.35rem;border:1px solid var(--line);border-radius:4px;
+    background:#fff;color:var(--ink);text-align:right;
+  }
+  .mag-row .mag-x{font-size:0.75rem;color:var(--ink-soft);flex:none;}
+  .mag-row input:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+
+  svg.tri{width:100%;height:auto;display:block;touch-action:none;}
+  .tri-bg{fill:#fff;stroke:var(--line);stroke-width:1.25;}
+  .tri-grid{stroke:var(--line-soft);stroke-width:1;fill:none;}
+  .tri-marker{fill:var(--steel);stroke:#fff;stroke-width:2;cursor:grab;}
+  .tri-marker:active{cursor:grabbing;}
+  .vertex-dot{stroke:#fff;stroke-width:1.5;}
+  .vertex-label{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:var(--ink-soft);}
+
+  .corners{margin-top:0.7rem;}
+  .corner-row{
+    display:grid;grid-template-columns:14px 1fr auto auto auto;align-items:center;
+    gap:0.5rem;padding:0.3rem 0;border-top:1px solid var(--line-soft);font-size:0.83rem;
+  }
+  .corner-row:first-child{border-top:none;}
+  .corner-row .swatch{border-radius:50%;}
+  .corner-name{color:var(--ink-soft);}
+  .corner-pct{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.83rem;min-width:2.6em;text-align:right;}
+  .lock-toggle{display:flex;align-items:center;gap:0.3rem;font-size:0.74rem;color:var(--ink-soft);cursor:pointer;user-select:none;}
+  .lock-toggle input[type="checkbox"]{margin:0;accent-color:var(--steel);}
+  .lock-toggle input[type="checkbox"]:disabled + span{opacity:0.4;}
+  .lock-val{
+    width:3.4rem;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:0.78rem;padding:0.15rem 0.3rem;border:1px solid var(--line);border-radius:4px;
+    background:#fff;visibility:hidden;
+  }
+  .lock-val.active{visibility:visible;}
+
+  .slider-row{
+    grid-column:1 / -1;
+    display:flex;align-items:center;gap:0.4rem;
+    margin-top:0.15rem;
+  }
+  .slider-row .bound-edge{
+    width:2.6rem;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:0.72rem;padding:0.1rem 0.25rem;border:1px solid var(--line);border-radius:4px;
+    background:#fff;color:var(--ink-soft);text-align:center;
+  }
+  .slider-row .corner-slider{flex:1;accent-color:var(--steel);}
+  .slider-row input:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+
+  .card-note{font-size:0.72rem;color:var(--ink-soft);font-style:italic;margin:0.7rem 0 0;}
+  .cap-warn{margin-top:0.5rem;font-size:0.76rem;color:var(--warn);display:none;}
+  .cap-warn.show{display:block;}
+
+  .shift-panel{
+    margin-top:1.9rem;background:var(--paper-raised);border:1px solid var(--line);
+    border-radius:8px;padding:1.1rem 1.2rem 1.25rem;
+  }
+  .shift-panel h2{font-size:0.95rem;font-weight:650;margin:0 0 0.15rem;}
+  .shift-panel .sub{font-size:0.8rem;color:var(--ink-soft);margin:0 0 0.9rem;max-width:64ch;line-height:1.45;}
+  .shift-controls{display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;}
+  .shift-controls select, .shift-controls input[type="number"]{
+    font:inherit;font-size:0.85rem;padding:0.35rem 0.5rem;border:1px solid var(--line);
+    border-radius:5px;background:#fff;color:var(--ink);
+  }
+  .shift-controls input[type="number"]{width:5.5rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .shift-controls .arrow{color:var(--ink-soft);font-size:0.9rem;}
+  .shift-controls button{
+    font:inherit;font-size:0.85rem;padding:0.42rem 0.9rem;background:var(--steel);
+    color:#fff;border:none;border-radius:5px;cursor:pointer;
+  }
+  .shift-controls button:hover{background:var(--steel-dim);}
+  .shift-controls button:focus-visible, .shift-controls select:focus-visible, .shift-controls input:focus-visible{
+    outline:2px solid var(--steel);outline-offset:1px;
+  }
+  .shift-status{margin:0.85rem 0 0;font-size:0.83rem;color:var(--ink-soft);min-height:1.2em;}
+  .shift-status.attention{color:var(--warn);}
+
+  .summary{
+    margin-top:1.9rem;background:var(--paper-raised);border:1px solid var(--line);
+    border-radius:8px;padding:1.1rem 1.2rem 1.25rem;
+  }
+  .summary h2{font-size:0.95rem;font-weight:650;margin:0 0 0.15rem;}
+  .summary .sub{font-size:0.8rem;color:var(--ink-soft);margin:0 0 0.9rem;}
+  .bar{display:flex;height:22px;border-radius:4px;overflow:hidden;border:1px solid var(--line);}
+  .bar div{height:100%;}
+  .bar-labels{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:0.4rem;margin-top:0.6rem;font-size:0.72rem;color:var(--ink-soft);text-align:center;}
+  .bar-labels .bl-item{display:flex;flex-direction:column;align-items:center;gap:0.25rem;min-width:0;}
+  .bar-labels .bl-item .swatch{width:10px;height:10px;border-radius:2px;flex:none;}
+  .bar-labels .bl-text{white-space:normal;word-break:break-word;line-height:1.25;}
+  .bar-labels .bl-pct{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:0.68rem;color:var(--ink);
+  }
+  table.result{width:100%;border-collapse:collapse;margin-top:1.1rem;font-size:0.86rem;}
+  table.result th, table.result td{text-align:right;padding:0.4rem 0.5rem;border-top:1px solid var(--line-soft);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  table.result th:first-child, table.result td:first-child{text-align:left;font-family:inherit;}
+  table.result thead th{font-family:inherit;color:var(--ink-soft);font-weight:600;border-top:none;font-size:0.78rem;}
+  .balance-line{margin-top:0.85rem;font-size:0.82rem;color:var(--ink-soft);}
+  .balance-line strong{color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;}
+
+  .ph-readout{display:flex;align-items:baseline;gap:0.5rem;margin-top:0.3rem;}
+  .ph-value{font-size:2.1rem;font-weight:650;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink);}
+  .ph-unit{font-size:0.85rem;color:var(--ink-soft);}
+  .ph-detail{margin:0.5rem 0 0;font-size:0.82rem;color:var(--ink-soft);line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .ph-caveat{margin:0.5rem 0 0;font-size:0.78rem;color:var(--warn);line-height:1.5;}
+  .ph-none{font-size:0.85rem;color:var(--ink-soft);margin:0.3rem 0 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Ion pairing bench</h1>
+    <p>Drag each cation's marker toward the anion it should pair with. Position is charge-equivalent, so the mix always balances. Ca, K, NH₄, and Na get extra-cornered plots so citrate, MES, and the two phosphate species sit as real corners rather than a bolt-on slider. Lock a corner to hold its share fixed while you adjust the rest.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="swatch" style="background:var(--cl)"></span>Cl⁻</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--no3)"></span>NO₃⁻</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--so4)"></span>SO₄²⁻</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--mes)"></span>MES⁻ (K only)</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--cit)"></span>citrate³⁻ (Ca only)</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--h2po4)"></span>H₂PO₄⁻ (K, NH₄, Na)</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--hpo4)"></span>HPO₄²⁻ (K, NH₄, Na)</span>
+    </div>
+    <div class="presets">
+      <button data-preset="ms">MS classic</button>
+      <button data-preset="clfree">Chloride-free</button>
+      <button data-preset="reset">Reset</button>
+    </div>
+    <div class="display-toggle">
+      <span class="display-toggle-label">Corner readouts:</span>
+      <div class="toggle-group" id="displayToggle">
+        <button data-mode="pct" class="active">%</button>
+        <button data-mode="mM">mM</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="recipe-panel">
+    <h2>Start from a recipe</h2>
+    <p class="sub">Pick a standard medium, or paste your own macro salts as "name: mg/L", one per line — see the salt rubric below for exactly what's recognized. Only salts that map onto Ca/Mg/K/NH₄/Na paired with Cl⁻/NO₃⁻/SO₄²⁻/MES⁻/citrate³⁻/H₂PO₄⁻/HPO₄²⁻ are used — micronutrients, chelated iron, and organics are outside what this bench tracks and get skipped with a note.</p>
+    <div class="recipe-controls">
+      <select id="recipeSelect">
+        <option value="MS">MS (Murashige &amp; Skoog)</option>
+        <option value="WPM">WPM (Lloyd &amp; McCown)</option>
+        <option value="B5">B5 (Gamborg)</option>
+        <option value="DKW">DKW (Driver &amp; Kuniyuki Walnut)</option>
+        <option value="CUSTOM">Custom — edit below</option>
+      </select>
+      <button id="recipeApply">Apply recipe</button>
+    </div>
+    <textarea id="recipeText" spellcheck="false"></textarea>
+    <p class="recipe-status" id="recipeStatus"></p>
+
+    <details class="rubric" id="saltRubric">
+      <summary>Salt rubric — <span id="saltCount">0</span> salts supported (click a name to copy it)</summary>
+      <table class="rubric-table">
+        <thead><tr><th>salt</th><th>cation</th><th>anion</th><th>MW</th><th>also recognized as</th></tr></thead>
+        <tbody id="rubricBody"></tbody>
+      </table>
+    </details>
+  </div>
+
+  <div class="overview">
+    <div class="overview-card">
+      <h2>Cation mix</h2>
+      <p class="sub">Share of total cation charge, read-only.</p>
+      <svg class="tri" id="overviewCat" viewBox="0 0 300 248"></svg>
+      <div class="overview-legend" id="overviewCatLegend"></div>
+    </div>
+    <div class="overview-card">
+      <h2>Anion mix</h2>
+      <p class="sub">Share of total anion charge, read-only.</p>
+      <svg class="tri" id="overviewAnion" viewBox="0 0 300 248"></svg>
+      <div class="overview-legend" id="overviewAnionLegend"></div>
+    </div>
+  </div>
+
+  <div class="grid" id="cardGrid"></div>
+
+  <div class="shift-panel">
+    <h2>Shift anions</h2>
+    <p class="sub">Move a slug of charge from one anion to another across the whole medium. The bench draws it from whichever cation currently carries the most of the source anion, so it touches the fewest salts possible before moving to a second one.</p>
+    <div class="shift-controls">
+      <select id="shiftFrom"></select>
+      <span class="arrow">→</span>
+      <select id="shiftTo"></select>
+      <input type="number" id="shiftAmount" min="0" step="0.5" value="5">
+      <span style="font-size:0.82rem;color:var(--ink-soft)">meq/L</span>
+      <button id="shiftApply">Apply</button>
+    </div>
+    <p class="shift-status" id="shiftStatus"></p>
+  </div>
+
+  <div class="summary">
+    <h2>Resulting cation pool</h2>
+    <p class="sub">Summed across Ca/Mg/K/NH₄/Na, by charge equivalents.</p>
+    <div class="bar" id="stackBarCat"></div>
+    <div class="bar-labels" id="barLabelsCat"></div>
+    <table class="result">
+      <thead><tr><th>cation</th><th>meq / L</th><th>mM</th><th>share</th></tr></thead>
+      <tbody id="resultBodyCat"></tbody>
+    </table>
+  </div>
+
+  <div class="summary">
+    <h2>Resulting anion pool</h2>
+    <p class="sub">Summed across all five cations, by charge equivalents.</p>
+    <div class="bar" id="stackBar"></div>
+    <div class="bar-labels" id="barLabels"></div>
+    <table class="result">
+      <thead><tr><th>anion</th><th>meq / L</th><th>mM</th><th>share</th></tr></thead>
+      <tbody id="resultBody"></tbody>
+    </table>
+    <p class="balance-line">total cation charge <strong id="catMeq">–</strong> meq/L &nbsp;=&nbsp; total anion charge <strong id="anMeq">–</strong> meq/L</p>
+  </div>
+
+  <div class="summary" id="phBufferPanel">
+    <h2>Phosphate buffer pH, in isolation</h2>
+    <p class="sub">Gomori-style estimate from H₂PO₄⁻/HPO₄²⁻ alone (K, NH₄, and Na sources pooled together), as if nothing else in the medium had any say in pH.</p>
+    <div id="phBufferBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var ANIONS_ALL = ["Cl","NO3","SO4","MES","Citrate","H2PO4","HPO4"];
+  var META = {
+    Cl:      {label:"Cl⁻",      valence:1, hex:"#B8823A"},
+    NO3:     {label:"NO₃⁻",     valence:1, hex:"#1F6F63"},
+    SO4:     {label:"SO₄²⁻",    valence:2, hex:"#6E4C86"},
+    MES:     {label:"MES⁻",     valence:1, hex:"#3B6E90"},
+    Citrate: {label:"citrate³⁻",valence:3, hex:"#8B3A42"},
+    H2PO4:   {label:"H₂PO₄⁻",   valence:1, hex:"#7D8A3A"},
+    HPO4:    {label:"HPO₄²⁻",   valence:2, hex:"#5B4E96"}
+  };
+  var CATION_HEX = { Ca:"#3E6E96", Mg:"#5C8A5C", K:"#B0793A", NH4:"#8C5B8C", Na:"#A8556B" };
+  var CATION_LABEL = { Ca:"Ca²⁺", Mg:"Mg²⁺", K:"K⁺", NH4:"NH₄⁺", Na:"Na⁺" };
+
+  // gypsum solubility ~2.63 g/L (25C) / 172.17 g/mol (dihydrate) ~= 15.3 mM CaSO4.
+  // cap held at half that as a working ceiling, well clear of saturation/precipitation risk.
+  var SO4_SOLUBILITY_MM = 15.3;
+  var SO4_CAP_MM = SO4_SOLUBILITY_MM / 2;
+
+  var CATIONS = [
+    {key:"Ca",  formula:"Ca<sup>2+</sup>",  valence:2, anions:["Cl","NO3","SO4","Citrate"],
+     cap:{anion:"SO4", maxMM:SO4_CAP_MM},
+     note:"citrate charge accounted at full ionization (citrate³⁻); actual speciation near working pH is lower."},
+    {key:"Mg",  formula:"Mg<sup>2+</sup>",  valence:2, anions:["Cl","NO3","SO4"], cap:null, note:null},
+    {key:"K",   formula:"K<sup>+</sup>",    valence:1, anions:["Cl","NO3","SO4","MES","H2PO4","HPO4"], cap:null,
+     note:"H₂PO₄⁻/HPO₄²⁻ tracks which salt you add (mono- vs dibasic), not the live pH-dependent buffering between them (pKa₂≈7.2)."},
+    {key:"NH4", formula:"NH<sub>4</sub><sup>+</sup>", valence:1, anions:["Cl","NO3","SO4","H2PO4","HPO4"], cap:null,
+     note:"H₂PO₄⁻/HPO₄²⁻ tracks which salt you add (mono- vs dibasic), not the live pH-dependent buffering between them (pKa₂≈7.2)."},
+    {key:"Na",  formula:"Na<sup>+</sup>",   valence:1, anions:["Cl","NO3","H2PO4","HPO4"], cap:null,
+     note:"H₂PO₄⁻/HPO₄²⁻ tracks which salt you add (mono- vs dibasic), not the live pH-dependent buffering between them (pKa₂≈7.2)."}
+  ];
+  var CBY = {}; CATIONS.forEach(function(c){ CBY[c.key]=c; });
+
+  var MS_DEFAULTS = {
+    Ca:  {mM:3.0,  weights:{Cl:1.0, NO3:0.0, SO4:0.0, Citrate:0.0}},
+    Mg:  {mM:1.5,  weights:{Cl:0.0, NO3:0.0, SO4:1.0}},
+    K:   {mM:18.8, weights:{Cl:0.0, NO3:1.0, SO4:0.0, MES:0.0, H2PO4:0.0, HPO4:0.0}},
+    NH4: {mM:20.6, weights:{Cl:0.0, NO3:1.0, SO4:0.0, H2PO4:0.0, HPO4:0.0}},
+    Na:  {mM:0.0,  weights:{Cl:1.0, NO3:0.0, H2PO4:0.0, HPO4:0.0}}
+  };
+
+  var MAG_MIN = 0.125, MAG_MAX = 5;
+  var MAG_LOG_MIN = Math.log2(MAG_MIN), MAG_LOG_MAX = Math.log2(MAG_MAX);
+  var displayMode = "pct"; // "pct" or "mM" -- how corner/legend readouts are shown
+
+  // per-corner slider bounds, stored as fractions (0-1) so they survive display-mode toggles
+  // and cation mM changes without drifting.
+  var cornerBounds = {};
+  function boundsKey(key,a){ return key+"|"+a; }
+  function getBounds(key,a){ return cornerBounds[boundsKey(key,a)] || {minFrac:0, maxFrac:1}; }
+  function setBounds(key,a,minFrac,maxFrac){ cornerBounds[boundsKey(key,a)] = {minFrac:minFrac, maxFrac:maxFrac}; }
+  function round2(x){ return Math.round(x*100)/100; }
+  function valenceFactor(key, anion){ return CBY[key].valence / META[anion].valence; }
+  function fracToView(frac, key, anion){
+    return displayMode==="pct" ? frac*100 : frac * state[key].mM * valenceFactor(key, anion);
+  }
+  function viewToFrac(val, key, anion){
+    if(displayMode==="pct") return val/100;
+    var denom = state[key].mM * valenceFactor(key, anion);
+    return denom>1e-9 ? val/denom : 0;
+  }
+
+  var state = {};
+  function freshState(){
+    var s = {};
+    CATIONS.forEach(function(c){
+      var locks = {}; c.anions.forEach(function(a){ locks[a]=null; });
+      s[c.key] = {
+        mM: MS_DEFAULTS[c.key].mM,
+        baseMM: MS_DEFAULTS[c.key].mM,
+        factor: 1,
+        weights: Object.assign({}, MS_DEFAULTS[c.key].weights),
+        locks: locks,
+        warn: null
+      };
+    });
+    return s;
+  }
+  state = freshState();
+
+  // ---------- polygon geometry ----------
+  var CX=150, CY=124, R=104;
+  function polygonVertices(n){
+    var pts=[];
+    for(var i=0;i<n;i++){
+      var bearing = -i*(2*Math.PI/n);
+      pts.push([ CX + R*Math.sin(bearing), CY - R*Math.cos(bearing) ]);
+    }
+    return pts;
+  }
+  var VERT_CACHE = {};
+  function vertsFor(key){
+    var n = CBY[key].anions.length;
+    if(!VERT_CACHE[n]) VERT_CACHE[n] = polygonVertices(n);
+    return VERT_CACHE[n];
+  }
+
+  function clamp01(x){ return Math.max(0, Math.min(1,x)); }
+  function signedArea2(A,B,C){ return (B[0]-A[0])*(C[1]-A[1]) - (C[0]-A[0])*(B[1]-A[1]); }
+
+  function wachspressWeights(verts,P){
+    var n=verts.length;
+    for(var i=0;i<n;i++){
+      var dx=P[0]-verts[i][0], dy=P[1]-verts[i][1];
+      if(dx*dx+dy*dy < 1e-6){ var w0=new Array(n).fill(0); w0[i]=1; return w0; }
+    }
+    var w=new Array(n);
+    for(i=0;i<n;i++){
+      var prev=verts[(i-1+n)%n], cur=verts[i], next=verts[(i+1)%n];
+      var Ai = signedArea2(prev,cur,next);
+      var Bp = signedArea2(P,prev,cur);
+      var Bn = signedArea2(P,cur,next);
+      var denom = Bp*Bn;
+      if(Math.abs(denom)<1e-9) denom = denom>=0?1e-9:-1e-9;
+      w[i]=Ai/denom;
+    }
+    var sum=w.reduce(function(s,x){return s+x;},0);
+    if(Math.abs(sum)<1e-9) sum=1e-9;
+    return w.map(function(x){return x/sum;});
+  }
+  function polygonOrientation(verts){
+    var n=verts.length, area=0;
+    for(var i=0;i<n;i++){ var a=verts[i], b=verts[(i+1)%n]; area+=(a[0]*b[1]-b[0]*a[1]); }
+    return area>=0?1:-1;
+  }
+  function pointInConvexPolygon(P,verts){
+    var n=verts.length, orient=polygonOrientation(verts);
+    for(var i=0;i<n;i++){
+      var a=verts[i], b=verts[(i+1)%n];
+      var cross=(b[0]-a[0])*(P[1]-a[1])-(b[1]-a[1])*(P[0]-a[0]);
+      if(orient>=0){ if(cross< -1e-6) return false; } else { if(cross>1e-6) return false; }
+    }
+    return true;
+  }
+  function closestPointOnSegment(P,A,B){
+    var ABx=B[0]-A[0], ABy=B[1]-A[1];
+    var len2=ABx*ABx+ABy*ABy;
+    var t = len2>0 ? ((P[0]-A[0])*ABx+(P[1]-A[1])*ABy)/len2 : 0;
+    t=Math.max(0,Math.min(1,t));
+    return [A[0]+ABx*t, A[1]+ABy*t];
+  }
+  function closestPointOnPolygonBoundary(P,verts){
+    var n=verts.length, best=null, bestD=Infinity;
+    for(var i=0;i<n;i++){
+      var c=closestPointOnSegment(P,verts[i],verts[(i+1)%n]);
+      var d=(c[0]-P[0])*(c[0]-P[0])+(c[1]-P[1])*(c[1]-P[1]);
+      if(d<bestD){bestD=d;best=c;}
+    }
+    return best;
+  }
+  function clampToConvexPolygon(P,verts){
+    return pointInConvexPolygon(P,verts) ? P : closestPointOnPolygonBoundary(P,verts);
+  }
+  function projectToSegment01(P,A,B){
+    var ABx=B[0]-A[0], ABy=B[1]-A[1];
+    var len2=ABx*ABx+ABy*ABy;
+    var t = len2>0 ? ((P[0]-A[0])*ABx+(P[1]-A[1])*ABy)/len2 : 0;
+    return Math.max(0, Math.min(1, t));
+  }
+  function weightedPoint(verts, anions, weights){
+    var x=0,y=0;
+    anions.forEach(function(a,i){ x+=(weights[a]||0)*verts[i][0]; y+=(weights[a]||0)*verts[i][1]; });
+    return [x,y];
+  }
+  // recursively resolves a screen point into per-anion weights, honoring any locked corners
+  function dragToWeights(verts, anions, locks, P){
+    var lockedIdx=[], freeIdx=[];
+    anions.forEach(function(a,i){ if(locks[a]!=null) lockedIdx.push(i); else freeIdx.push(i); });
+    if(freeIdx.length===0) return null;
+    var lockedSum=lockedIdx.reduce(function(s,i){ return s+locks[anions[i]]; },0);
+    var remainder=1-lockedSum;
+    var base=[0,0];
+    lockedIdx.forEach(function(i){ base[0]+=locks[anions[i]]*verts[i][0]; base[1]+=locks[anions[i]]*verts[i][1]; });
+    var weights={};
+    lockedIdx.forEach(function(i){ weights[anions[i]]=locks[anions[i]]; });
+    if(freeIdx.length===1){ weights[anions[freeIdx[0]]]=Math.max(0,remainder); return weights; }
+    if(remainder<=1e-9){ freeIdx.forEach(function(i){ weights[anions[i]]=0; }); return weights; }
+    var Q=[(P[0]-base[0])/remainder, (P[1]-base[1])/remainder];
+    var freeVerts=freeIdx.map(function(i){ return verts[i]; });
+    if(freeIdx.length===2){
+      var t=projectToSegment01(Q,freeVerts[0],freeVerts[1]);
+      weights[anions[freeIdx[0]]]=remainder*(1-t);
+      weights[anions[freeIdx[1]]]=remainder*t;
+    } else {
+      var Qc=clampToConvexPolygon(Q,freeVerts);
+      var u=wachspressWeights(freeVerts,Qc);
+      freeIdx.forEach(function(i,k){ weights[anions[i]]=remainder*u[k]; });
+    }
+    return weights;
+  }
+
+  // ---------- derived accessors ----------
+  function meqTo(key, anion){
+    var st = state[key], c = CBY[key];
+    return st.mM * c.valence * (st.weights[anion]||0);
+  }
+  function applicable(key, anion){ return CBY[key].anions.indexOf(anion)>=0; }
+  function capMaxFrac(key){
+    var c = CBY[key];
+    if(!c.cap) return 1;
+    return clamp01(c.cap.maxMM / state[key].mM);
+  }
+  function enforceCap(key){
+    var c = CBY[key], st = state[key];
+    st.warn = null;
+    if(!c.cap) return;
+    var mx = capMaxFrac(key), a = c.cap.anion;
+    if(st.weights[a] > mx + 1e-9){
+      var excess = st.weights[a]-mx;
+      var freeOthers = c.anions.filter(function(x){ return x!==a && st.locks[x]==null; });
+      if(freeOthers.length===0){
+        st.warn = "Locked shares would need more "+META[a].label+" than the solubility cap allows.";
+      } else {
+        var wsum = freeOthers.reduce(function(s,x){ return s+st.weights[x]; },0);
+        if(wsum<=1e-9){
+          var share=excess/freeOthers.length;
+          freeOthers.forEach(function(x){ st.weights[x]+=share; });
+        } else {
+          freeOthers.forEach(function(x){ st.weights[x] += excess*(st.weights[x]/wsum); });
+        }
+        st.weights[a]=mx;
+      }
+      if(st.locks[a]!=null) st.locks[a]=mx;
+    }
+  }
+  function computeDragUpdate(key, P){
+    var st = state[key];
+    var newWeights = dragToWeights(vertsFor(key), CBY[key].anions, st.locks, P);
+    if(newWeights==null) return;
+    st.weights = newWeights;
+    enforceCap(key);
+  }
+  // sets one corner's share directly (via slider or typed value) and redistributes the rest
+  // through the same recursive resolver drag uses. If that corner is already fixed, the fix
+  // moves with it; otherwise the corner stays free to grab and drag afterward.
+  function applyCornerValue(key, anion, newVal){
+    var c = CBY[key], st = state[key];
+    var verts = vertsFor(key);
+    var curPoint = weightedPoint(verts, c.anions, st.weights);
+    var tempLocks = Object.assign({}, st.locks);
+    tempLocks[anion] = newVal;
+    var resolved = dragToWeights(verts, c.anions, tempLocks, curPoint);
+    if(resolved) st.weights = resolved;
+    if(st.locks[anion]!=null) st.locks[anion] = newVal;
+    enforceCap(key);
+  }
+
+  // ---------- transfer engine (shift-anions tool) ----------
+  function supplyFrom(key, anion){ return meqTo(key, anion); }
+  function receiveHeadroom(key, anion){
+    var c = CBY[key], st = state[key];
+    if(c.cap && c.cap.anion===anion){
+      var headroomFrac = Math.max(0, capMaxFrac(key) - (st.weights[anion]||0));
+      return headroomFrac * st.mM * c.valence;
+    }
+    return Infinity;
+  }
+  function applyTransfer(key, fromAnion, toAnion, meqAmount){
+    var c = CBY[key], st = state[key];
+    var dFracAbs = meqAmount / (st.mM * c.valence);
+    st.weights[fromAnion] = Math.max(0, (st.weights[fromAnion]||0) - dFracAbs);
+    st.weights[toAnion] = (st.weights[toAnion]||0) + dFracAbs;
+    enforceCap(key);
+  }
+  function performShift(fromAnion, toAnion, deltaRequested){
+    var candidates = CATIONS.map(function(c){ return c.key; }).filter(function(k){
+      if(!applicable(k,fromAnion) || !applicable(k,toAnion)) return false;
+      if(state[k].locks[fromAnion]!=null) return false;
+      if(state[k].locks[toAnion]!=null) return false;
+      return true;
+    }).map(function(k){
+      return {key:k, transferable: Math.min(supplyFrom(k,fromAnion), receiveHeadroom(k,toAnion))};
+    }).filter(function(x){ return x.transferable>1e-9; });
+
+    candidates.sort(function(a,b){ return b.transferable - a.transferable; });
+
+    var remaining = deltaRequested, touched=[];
+    candidates.forEach(function(cand){
+      if(remaining<=1e-9) return;
+      var take = Math.min(remaining, cand.transferable);
+      if(take<=1e-9) return;
+      applyTransfer(cand.key, fromAnion, toAnion, take);
+      touched.push(cand.key);
+      remaining -= take;
+    });
+    return {touched:touched, applied:deltaRequested-remaining, shortfall:Math.max(0,remaining)};
+  }
+
+  // ---------- build UI ----------
+  var gridEl = document.getElementById("cardGrid");
+
+  function vertexLabelPos(v){
+    var dx=v[0]-CX, dy=v[1]-CY;
+    var anchor = dx>8 ? "start" : dx<-8 ? "end" : "middle";
+    var dxOff = anchor==="start" ? 7 : anchor==="end" ? -7 : 0;
+    var dyOff = dy<-8 ? -8 : dy>8 ? 15 : 4;
+    return {x:v[0]+dxOff, y:v[1]+dyOff, anchor:anchor};
+  }
+
+  function buildCard(c){
+    var verts = vertsFor(c.key);
+    var card = document.createElement("div");
+    card.className = "card";
+    var vb = "0 0 300 248";
+    var polyPoints = verts.map(function(v){ return v[0].toFixed(1)+","+v[1].toFixed(1); }).join(" ");
+
+    var svgInner = '<polygon class="tri-bg" points="'+polyPoints+'"></polygon><g class="grid-lines"></g>';
+    c.anions.forEach(function(a,i){
+      var v = verts[i];
+      svgInner += '<line class="tri-grid" x1="'+CX+'" y1="'+CY+'" x2="'+v[0].toFixed(1)+'" y2="'+v[1].toFixed(1)+'"></line>';
+    });
+    c.anions.forEach(function(a,i){
+      var v = verts[i];
+      svgInner += '<circle class="vertex-dot" r="3.5" cx="'+v[0].toFixed(1)+'" cy="'+v[1].toFixed(1)+'" fill="'+META[a].hex+'"></circle>';
+      var lp = vertexLabelPos(v);
+      svgInner += '<text class="vertex-label" x="'+lp.x.toFixed(1)+'" y="'+lp.y.toFixed(1)+'" text-anchor="'+lp.anchor+'">'+META[a].label+'</text>';
+    });
+    svgInner += '<circle class="tri-marker" r="7"></circle>';
+
+    card.innerHTML =
+      '<div class="card-head">' +
+        '<span class="formula">'+c.formula+'</span>' +
+        '<label class="mM-field">total <input type="number" min="0" step="0.1" class="mM-input" data-key="'+c.key+'"> mM</label>' +
+      '</div>' +
+      '<div class="mag-row">' +
+        '<span class="mag-edge">⅛×</span>' +
+        '<input type="range" class="mag-slider" data-magslider min="'+MAG_LOG_MIN.toFixed(6)+'" max="'+MAG_LOG_MAX.toFixed(6)+'" step="0.001" value="0">' +
+        '<span class="mag-edge">5×</span>' +
+        '<input type="number" class="mag-factor" data-magfactor min="0.125" max="5" step="0.01" value="1">' +
+        '<span class="mag-x">×</span>' +
+      '</div>' +
+      '<svg class="tri" viewBox="'+vb+'" data-key="'+c.key+'">'+svgInner+'</svg>' +
+      '<div class="corners"></div>' +
+      (c.note ? '<p class="card-note">'+c.note+'</p>' : '') +
+      (c.cap ? '<p class="cap-warn" data-capwarn></p>' : '');
+    gridEl.appendChild(card);
+
+    var cornersEl = card.querySelector(".corners");
+    c.anions.forEach(function(a){
+      var row = document.createElement("div");
+      row.className = "corner-row";
+      row.dataset.key = c.key;
+      row.dataset.anion = a;
+      row.innerHTML =
+        '<span class="swatch" style="background:'+META[a].hex+'"></span>' +
+        '<span class="corner-name">'+META[a].label+'</span>' +
+        '<span class="corner-pct" data-pct></span>' +
+        '<label class="lock-toggle"><input type="checkbox" data-lock><span>fix</span></label>' +
+        '<input type="number" class="lock-val" data-lockval step="any">';
+      var sliderRow = document.createElement("div");
+      sliderRow.className = "slider-row";
+      sliderRow.innerHTML =
+        '<input type="number" class="bound-edge" data-boundmin step="any" value="0">' +
+        '<input type="range" class="corner-slider" data-slider min="0" max="100" step="any" value="0">' +
+        '<input type="number" class="bound-edge" data-boundmax step="any" value="100">';
+      row.appendChild(sliderRow);
+      cornersEl.appendChild(row);
+    });
+
+    card.querySelector(".mM-input").addEventListener("input", function(e){
+      var v = parseFloat(e.target.value);
+      var mm = isNaN(v) ? 0 : v;
+      state[c.key].mM = mm;
+      state[c.key].baseMM = mm;
+      state[c.key].factor = 1;
+      enforceCap(c.key);
+      renderAll();
+    });
+
+    var magSlider = card.querySelector("[data-magslider]");
+    var magFactor = card.querySelector("[data-magfactor]");
+    function setFactor(f){
+      if(isNaN(f)) return;
+      f = Math.max(MAG_MIN, Math.min(MAG_MAX, f));
+      var st = state[c.key];
+      st.factor = f;
+      st.mM = st.baseMM * f;
+      enforceCap(c.key);
+      renderAll();
+    }
+    magSlider.addEventListener("input", function(){
+      setFactor(Math.pow(2, parseFloat(magSlider.value)));
+    });
+    magFactor.addEventListener("input", function(){
+      setFactor(parseFloat(magFactor.value));
+    });
+
+    cornersEl.querySelectorAll(".corner-row").forEach(function(row){
+      var a = row.dataset.anion;
+      var cb = row.querySelector("[data-lock]");
+      var val = row.querySelector("[data-lockval]");
+      cb.addEventListener("change", function(){
+        var st = state[c.key];
+        if(cb.checked){
+          st.locks[a] = st.weights[a];
+          val.value = round2(fracToView(st.weights[a], c.key, a));
+          val.classList.add("active");
+        } else {
+          st.locks[a] = null;
+          val.classList.remove("active");
+        }
+        refreshLockAvailability(c.key);
+        renderAll();
+      });
+      function directSet(rawView){
+        var st = state[c.key];
+        var typedFrac = viewToFrac(parseFloat(rawView)||0, c.key, a);
+        var lockedOthers = c.anions.filter(function(x){ return x!==a && st.locks[x]!=null; });
+        var otherSum = lockedOthers.reduce(function(s,x){ return s+st.locks[x]; }, 0);
+        var newFrac = Math.max(0, Math.min(1-otherSum, typedFrac));
+        applyCornerValue(c.key, a, newFrac);
+        renderAll();
+      }
+      val.addEventListener("input", function(){ directSet(val.value); });
+
+      var slider = row.querySelector("[data-slider]");
+      var boundMin = row.querySelector("[data-boundmin]");
+      var boundMax = row.querySelector("[data-boundmax]");
+      slider.addEventListener("input", function(){ directSet(slider.value); });
+      function syncBoundsFromInputs(){
+        var loView = parseFloat(boundMin.value); if(isNaN(loView)) loView = 0;
+        var hiView = parseFloat(boundMax.value); if(isNaN(hiView)) hiView = fracToView(1, c.key, a);
+        var loFrac = clamp01(viewToFrac(loView, c.key, a));
+        var hiFrac = clamp01(viewToFrac(hiView, c.key, a));
+        if(hiFrac<=loFrac) hiFrac = Math.min(1, loFrac+0.01);
+        setBounds(c.key, a, loFrac, hiFrac);
+        renderAll();
+      }
+      boundMin.addEventListener("change", syncBoundsFromInputs);
+      boundMax.addEventListener("change", syncBoundsFromInputs);
+    });
+
+    var svg = card.querySelector("svg.tri");
+    var marker = card.querySelector(".tri-marker");
+    var dragging = false;
+    function toSvgPoint(evt){
+      var pt = svg.createSVGPoint();
+      pt.x = evt.clientX; pt.y = evt.clientY;
+      var loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return [loc.x, loc.y];
+    }
+    function startDrag(evt){
+      var lockedCount = c.anions.filter(function(a){ return state[c.key].locks[a]!=null; }).length;
+      if(c.anions.length - lockedCount <= 0) return;
+      dragging = true;
+      svg.setPointerCapture(evt.pointerId);
+      handleMove(evt);
+    }
+    function handleMove(evt){
+      if(!dragging) return;
+      computeDragUpdate(c.key, toSvgPoint(evt));
+      renderAll();
+    }
+    function endDrag(evt){
+      dragging = false;
+      try{ svg.releasePointerCapture(evt.pointerId); }catch(e){}
+    }
+    marker.addEventListener("pointerdown", startDrag);
+    svg.addEventListener("pointerdown", function(evt){ if(evt.target!==marker) startDrag(evt); });
+    svg.addEventListener("pointermove", handleMove);
+    svg.addEventListener("pointerup", endDrag);
+    svg.addEventListener("pointercancel", endDrag);
+  }
+
+  function refreshLockAvailability(key){
+    var c = CBY[key], st = state[key];
+    var lockedCount = c.anions.filter(function(a){ return st.locks[a]!=null; }).length;
+    var card = gridEl.querySelector('svg[data-key="'+key+'"]').closest(".card");
+    card.querySelectorAll(".corner-row").forEach(function(row){
+      var cb = row.querySelector("[data-lock]");
+      if(!cb.checked) cb.disabled = lockedCount>=c.anions.length-1;
+      else cb.disabled = false;
+    });
+  }
+
+  function renderCard(key){
+    var c = CBY[key], st = state[key];
+    var verts = vertsFor(key);
+    var card = gridEl.querySelector('svg[data-key="'+key+'"]').closest(".card");
+    var cxy = weightedPoint(verts, c.anions, st.weights);
+    card.querySelector(".tri-marker").setAttribute("cx", cxy[0].toFixed(2));
+    card.querySelector(".tri-marker").setAttribute("cy", cxy[1].toFixed(2));
+    if(document.activeElement !== card.querySelector(".mM-input")){
+      card.querySelector(".mM-input").value = Math.round(st.mM*1000)/1000;
+    }
+    var magSlider = card.querySelector("[data-magslider]");
+    var magFactor = card.querySelector("[data-magfactor]");
+    if(document.activeElement!==magSlider) magSlider.value = Math.log2(st.factor||1);
+    if(document.activeElement!==magFactor) magFactor.value = (st.factor||1).toFixed(3);
+    card.querySelectorAll(".corner-row").forEach(function(row){
+      var a = row.dataset.anion;
+      var frac = st.weights[a]||0;
+      row.querySelector("[data-pct]").textContent = displayMode==="pct"
+        ? Math.round(frac*100)+"%"
+        : fracToView(frac, key, a).toFixed(2)+" mM";
+      var cb = row.querySelector("[data-lock]");
+      var val = row.querySelector("[data-lockval]");
+      cb.checked = st.locks[a]!=null;
+      if(cb.checked){
+        val.classList.add("active");
+        if(document.activeElement!==val) val.value = round2(fracToView(frac, key, a));
+      } else {
+        val.classList.remove("active");
+      }
+      var slider = row.querySelector("[data-slider]");
+      var boundMin = row.querySelector("[data-boundmin]");
+      var boundMax = row.querySelector("[data-boundmax]");
+      var b = getBounds(key, a);
+      var loView = fracToView(b.minFrac, key, a);
+      var hiView = fracToView(b.maxFrac, key, a);
+      if(document.activeElement!==boundMin) boundMin.value = round2(loView);
+      if(document.activeElement!==boundMax) boundMax.value = round2(hiView);
+      slider.min = loView;
+      slider.max = hiView;
+      if(document.activeElement!==slider){
+        var curView = fracToView(frac, key, a);
+        slider.value = Math.max(loView, Math.min(hiView, curView));
+      }
+    });
+    refreshLockAvailability(key);
+
+    if(c.cap){
+      var warnEl = card.querySelector("[data-capwarn]");
+      var currentSaltMM = st.mM * (st.weights[c.cap.anion]||0);
+      if(st.warn){
+        warnEl.textContent = st.warn;
+        warnEl.classList.add("show");
+      } else if(currentSaltMM > c.cap.maxMM - 1e-6){
+        warnEl.textContent = "At the cap: "+currentSaltMM.toFixed(2)+" mM CaSO₄ (limit "+c.cap.maxMM.toFixed(1)+" mM, half of ~"+SO4_SOLUBILITY_MM.toFixed(1)+" mM gypsum solubility at 25 °C).";
+        warnEl.classList.add("show");
+      } else {
+        warnEl.classList.remove("show");
+      }
+    }
+  }
+
+  function computeAnionTotals(){
+    var meq = {}; ANIONS_ALL.forEach(function(a){ meq[a]=0; });
+    var totalCatMeq = 0;
+    CATIONS.forEach(function(c){
+      var st = state[c.key];
+      var m = st.mM * c.valence;
+      totalCatMeq += m;
+      c.anions.forEach(function(a){ meq[a] += m * (st.weights[a]||0); });
+    });
+    var totalAnMeq = ANIONS_ALL.reduce(function(s,a){ return s+meq[a]; }, 0);
+    var activeAnions = ANIONS_ALL.filter(function(a){ return meq[a] > 1e-6 || ["Cl","NO3","SO4"].indexOf(a)>=0; });
+    return {meq:meq, totalCatMeq:totalCatMeq, totalAnMeq:totalAnMeq, activeAnions:activeAnions};
+  }
+  function computeCationTotals(){
+    var mag = {}; var total=0;
+    CATIONS.forEach(function(c){ var m=state[c.key].mM*c.valence; mag[c.key]=m; total+=m; });
+    return {mag:mag, total:total};
+  }
+
+  function renderAlignedBar(barEl, labelsEl, items){
+    // items: [{pct, hex, label}]. Each label sits in a column matching its segment's share of
+    // the bar's width (with shrink allowed, so rounding overflow never pushes anything past
+    // the edge -- see the CaSO4-slider writeup for why 0 0 % without shrink caused trouble
+    // before). The swatch stays a fixed small size and the text sits under it, free to wrap
+    // onto a second line, so a narrow segment still gets a fully readable label instead of a
+    // truncated one -- it just takes more vertical room instead.
+    barEl.innerHTML = "";
+    labelsEl.innerHTML = "";
+    items.forEach(function(it){
+      var seg = document.createElement("div");
+      seg.style.flex = "0 0 " + it.pct + "%";
+      seg.style.background = it.hex;
+      barEl.appendChild(seg);
+
+      var lab = document.createElement("div");
+      lab.className = "bl-item";
+      lab.style.flex = "0 1 " + it.pct + "%";
+      lab.innerHTML = '<span class="swatch" style="background:'+it.hex+'"></span><span class="bl-text">'+it.label+'</span><span class="bl-pct">'+it.pct.toFixed(0)+'%</span>';
+      labelsEl.appendChild(lab);
+    });
+  }
+
+  function renderCationSummary(){
+    var cat = computeCationTotals();
+    var items = CAT_KEYS.map(function(k){
+      return {pct: cat.total>0 ? (cat.mag[k]/cat.total*100) : (100/CAT_KEYS.length), hex: CATION_HEX[k], label: CATION_LABEL[k]};
+    });
+    renderAlignedBar(document.getElementById("stackBarCat"), document.getElementById("barLabelsCat"), items);
+
+    var body = document.getElementById("resultBodyCat");
+    body.innerHTML = "";
+    CAT_KEYS.forEach(function(k){
+      var meq = cat.mag[k];
+      var mM = state[k].mM;
+      var pct = cat.total>0 ? (meq/cat.total*100) : 0;
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td>"+CATION_LABEL[k]+"</td><td>"+meq.toFixed(2)+"</td><td>"+mM.toFixed(2)+"</td><td>"+pct.toFixed(0)+"%</td>";
+      body.appendChild(tr);
+    });
+  }
+
+  // apparent pKa2 of the phosphate 2nd dissociation falls as total phosphate concentration
+  // rises (ionic strength effect). Table from Green 1933 / FSU phosphate-buffer reference,
+  // averaged over pH 5.9-7.7; thermodynamic (infinite-dilution) value is 7.20.
+  var PKA2_TABLE = [[0,7.20],[0.01,7.03],[0.04,6.91],[0.10,6.81],[0.20,6.73],[0.30,6.68],[0.40,6.66],[0.50,6.64],[1.00,6.62],[2.00,6.65]];
+  function apparentPKa2(totalM){
+    if(totalM<=PKA2_TABLE[0][0]) return PKA2_TABLE[0][1];
+    var last = PKA2_TABLE[PKA2_TABLE.length-1];
+    if(totalM>=last[0]) return last[1];
+    for(var i=0;i<PKA2_TABLE.length-1;i++){
+      var a=PKA2_TABLE[i], b=PKA2_TABLE[i+1];
+      if(totalM>=a[0] && totalM<=b[0]){
+        var t=(totalM-a[0])/(b[0]-a[0]);
+        return a[1] + t*(b[1]-a[1]);
+      }
+    }
+    return last[1];
+  }
+  // Full triprotic equilibrium solve (charge + mass balance across H3PO4/H2PO4-/HPO4(2-)/PO4(3-),
+  // plus water autoionization) rather than a bare two-species Henderson-Hasselbalch. HH alone
+  // blows up (and can go negative) whenever one of the two species is near zero -- e.g. a pure
+  // monobasic salt like KH2PO4 with no dibasic counterpart -- because it isn't built to handle
+  // that limit. Solving the real equilibrium removes that failure mode and correctly reduces to
+  // the HH answer whenever both species are present in comparable amounts.
+  // pKa1 (H3PO4/H2PO4-) ~2.15 and pKa3 (HPO4(2-)/PO4(3-)) ~12.35 are used at their standard
+  // dilute-solution values; only pKa2 gets the concentration correction above (best-documented
+  // ionic-strength effect for this system). Treats the counter-cation (K+/Na+/NH4+) as an inert
+  // spectator charge -- for NH4+ specifically this ignores its own much weaker acidity (pKa~9.25),
+  // a reasonable simplification anywhere the solution doesn't run alkaline.
+  var KW = 1e-14, PKA1 = 2.15, PKA3 = 12.35;
+  function triproticPH(C1_mM, C2_mM){
+    var CT = C1_mM + C2_mM;
+    if(CT<=1e-9) return null;
+    var CT_M = CT/1000, Z_M = (C1_mM + 2*C2_mM)/1000;
+    var pka2 = apparentPKa2(CT_M);
+    var Ka1 = Math.pow(10,-PKA1), Ka2 = Math.pow(10,-pka2), Ka3 = Math.pow(10,-PKA3);
+    function chargeBalance(pH){
+      var h = Math.pow(10,-pH);
+      var D = h*h*h + Ka1*h*h + Ka1*Ka2*h + Ka1*Ka2*Ka3;
+      var a1 = Ka1*h*h/D, a2 = Ka1*Ka2*h/D, a3 = Ka1*Ka2*Ka3/D;
+      var anionCharge = CT_M*(a1*1 + a2*2 + a3*3);
+      return Z_M + h - anionCharge - KW/h;
+    }
+    var lo=0, hi=14, flo=chargeBalance(lo);
+    for(var i=0;i<80;i++){
+      var mid=(lo+hi)/2, fm=chargeBalance(mid);
+      if((flo>=0 && fm>=0) || (flo<0 && fm<0)){ lo=mid; flo=fm; } else { hi=mid; }
+    }
+    return {pH:(lo+hi)/2, pka2:pka2};
+  }
+  function computePhosphateBufferPH(){
+    var totals = computeAnionTotals();
+    var mM_H2PO4 = totals.meq.H2PO4 / META.H2PO4.valence;
+    var mM_HPO4 = totals.meq.HPO4 / META.HPO4.valence;
+    var totalP = mM_H2PO4 + mM_HPO4;
+    if(totalP<=1e-9) return {none:true};
+    var r = triproticPH(mM_H2PO4, mM_HPO4);
+    return {none:false, mM_H2PO4:mM_H2PO4, mM_HPO4:mM_HPO4, pka:r.pka2, pH:r.pH, totalP:totalP};
+  }
+  function renderPhosphateBuffer(){
+    var r = computePhosphateBufferPH();
+    var body = document.getElementById("phBufferBody");
+    if(r.none){
+      body.innerHTML = '<p class="ph-none">No H₂PO₄⁻ or HPO₄²⁻ in the current mix — nothing to buffer.</p>';
+      return;
+    }
+    var html = '<div class="ph-readout"><span class="ph-value">'+r.pH.toFixed(2)+'</span><span class="ph-unit">pH</span></div>' +
+      '<p class="ph-detail">H₂PO₄⁻ '+r.mM_H2PO4.toFixed(2)+' mM · HPO₄²⁻ '+r.mM_HPO4.toFixed(2)+
+      ' mM · apparent pKa₂ '+r.pka.toFixed(2)+' at '+r.totalP.toFixed(2)+' mM total phosphate.</p>';
+    if(Math.abs(r.pH - r.pka) > 1){
+      html += '<p class="ph-caveat">More than 1 pH unit from pKa₂ — this is the equilibrium pH, but phosphate has little buffering capacity here, so it won\'t resist much if something else pushes the medium\'s pH around.</p>';
+    }
+    body.innerHTML = html;
+  }
+
+  function renderSummary(){
+    var totals = computeAnionTotals();
+    var meq = totals.meq, totalAnMeq = totals.totalAnMeq, totalCatMeq = totals.totalCatMeq, activeAnions = totals.activeAnions;
+
+    var items = activeAnions.map(function(a){
+      return {pct: totalAnMeq>0 ? (meq[a]/totalAnMeq*100) : (100/activeAnions.length), hex: META[a].hex, label: META[a].label};
+    });
+    renderAlignedBar(document.getElementById("stackBar"), document.getElementById("barLabels"), items);
+
+    var body = document.getElementById("resultBody");
+    body.innerHTML = "";
+    activeAnions.forEach(function(a){
+      var mM = meq[a] / META[a].valence;
+      var pct = totalAnMeq>0 ? (meq[a]/totalAnMeq*100) : 0;
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td>"+META[a].label+"</td><td>"+meq[a].toFixed(2)+"</td><td>"+mM.toFixed(2)+"</td><td>"+pct.toFixed(0)+"%</td>";
+      body.appendChild(tr);
+    });
+
+    document.getElementById("catMeq").textContent = totalCatMeq.toFixed(2);
+    document.getElementById("anMeq").textContent = totalAnMeq.toFixed(2);
+  }
+
+  function renderAll(){
+    CATIONS.forEach(function(c){ renderCard(c.key); });
+    renderCationSummary();
+    renderSummary();
+    renderPhosphateBuffer();
+    renderOverview();
+  }
+
+  // ---------- read-only overview polygons (mirrors of state, no dragging) ----------
+  function buildStaticPolygon(svgEl, verts, keys, colorFor, labelFor){
+    var polyPoints = verts.map(function(v){ return v[0].toFixed(1)+","+v[1].toFixed(1); }).join(" ");
+    var inner = '<polygon class="tri-bg" points="'+polyPoints+'"></polygon>';
+    keys.forEach(function(k,i){
+      var v = verts[i];
+      inner += '<line class="tri-grid" x1="'+CX+'" y1="'+CY+'" x2="'+v[0].toFixed(1)+'" y2="'+v[1].toFixed(1)+'"></line>';
+    });
+    keys.forEach(function(k,i){
+      var v = verts[i];
+      inner += '<circle class="vertex-dot" r="3.5" cx="'+v[0].toFixed(1)+'" cy="'+v[1].toFixed(1)+'" fill="'+colorFor(k)+'"></circle>';
+      var lp = vertexLabelPos(v);
+      inner += '<text class="vertex-label" x="'+lp.x.toFixed(1)+'" y="'+lp.y.toFixed(1)+'" text-anchor="'+lp.anchor+'">'+labelFor(k)+'</text>';
+    });
+    inner += '<circle class="tri-marker" r="7"></circle>';
+    svgEl.innerHTML = inner;
+  }
+  var CAT_KEYS = ["Ca","Mg","K","NH4","Na"];
+  function buildOverview(){
+    buildStaticPolygon(document.getElementById("overviewCat"), polygonVertices(CAT_KEYS.length), CAT_KEYS,
+      function(k){ return CATION_HEX[k]; }, function(k){ return CATION_LABEL[k]; });
+    buildStaticPolygon(document.getElementById("overviewAnion"), polygonVertices(ANIONS_ALL.length), ANIONS_ALL,
+      function(a){ return META[a].hex; }, function(a){ return META[a].label; });
+  }
+  function renderOverview(){
+    var cat = computeCationTotals();
+    var catWeights = {};
+    CAT_KEYS.forEach(function(k){ catWeights[k] = cat.total>0 ? cat.mag[k]/cat.total : 0.25; });
+    var catSvg = document.getElementById("overviewCat");
+    var catPos = weightedPoint(polygonVertices(CAT_KEYS.length), CAT_KEYS, catWeights);
+    catSvg.querySelector(".tri-marker").setAttribute("cx", catPos[0].toFixed(2));
+    catSvg.querySelector(".tri-marker").setAttribute("cy", catPos[1].toFixed(2));
+    document.getElementById("overviewCatLegend").innerHTML = CAT_KEYS.map(function(k){
+      var val = displayMode==="pct" ? Math.round(catWeights[k]*100)+"%" : state[k].mM.toFixed(2)+" mM";
+      return '<span class="olg"><span class="swatch" style="background:'+CATION_HEX[k]+'"></span>'+CATION_LABEL[k]+
+             ' <span class="olg-pct">'+val+'</span></span>';
+    }).join("");
+
+    var totals = computeAnionTotals();
+    var anWeights = {};
+    ANIONS_ALL.forEach(function(a){ anWeights[a] = totals.totalAnMeq>0 ? totals.meq[a]/totals.totalAnMeq : 0; });
+    var anSvg = document.getElementById("overviewAnion");
+    var anPos = weightedPoint(polygonVertices(ANIONS_ALL.length), ANIONS_ALL, anWeights);
+    anSvg.querySelector(".tri-marker").setAttribute("cx", anPos[0].toFixed(2));
+    anSvg.querySelector(".tri-marker").setAttribute("cy", anPos[1].toFixed(2));
+    document.getElementById("overviewAnionLegend").innerHTML = ANIONS_ALL.map(function(a){
+      var mM = totals.meq[a] / META[a].valence;
+      var val = displayMode==="pct" ? Math.round(anWeights[a]*100)+"%" : mM.toFixed(2)+" mM";
+      return '<span class="olg"><span class="swatch" style="background:'+META[a].hex+'"></span>'+META[a].label+
+             ' <span class="olg-pct">'+val+'</span></span>';
+    }).join("");
+  }
+
+  CATIONS.forEach(buildCard);
+  buildOverview();
+  renderAll();
+
+  // ---------- recipe parser (salts -> state) ----------
+  function normSalt(s){
+    return s.toLowerCase().replace(/[\s.\u00b7\-]/g, "");
+  }
+  // db: normalized-name -> {mw, cation, cCount, anion, aCount}
+  var SALT_DB = {};
+  var SALT_REGISTRY = [];
+  function addSalt(names, mw, cation, cCount, anion, aCount){
+    var entry = {mw:mw, cation:cation, cCount:cCount, anion:anion, aCount:aCount};
+    names.forEach(function(n){ SALT_DB[normSalt(n)] = entry; });
+    SALT_REGISTRY.push({display:names[0], aliases:names.slice(1), mw:mw, cation:cation, cCount:cCount, anion:anion, aCount:aCount});
+  }
+  addSalt(["CaCl2", "CaCl2 anhydrous", "Calcium Chloride", "Calcium Chloride Anhydrous"], 110.98, "Ca", 1, "Cl", 2);
+  addSalt(["CaCl2.2H2O", "Calcium Chloride.2H2O", "Calcium Chloride Dihydrate"], 147.01, "Ca", 1, "Cl", 2);
+  addSalt(["Ca(NO3)2", "Calcium Nitrate", "Calcium Nitrate Anhydrous"], 164.09, "Ca", 1, "NO3", 2);
+  addSalt(["Ca(NO3)2.4H2O", "Calcium Nitrate Tetrahydrate", "Calcium Nitrate.4H2O"], 236.15, "Ca", 1, "NO3", 2);
+  addSalt(["CaSO4.2H2O", "Calcium Sulfate.2H2O", "Gypsum"], 172.17, "Ca", 1, "SO4", 1);
+  addSalt(["Ca3(C6H5O7)2.4H2O", "Calcium Citrate", "Tricalcium Citrate"], 570.51, "Ca", 3, "Citrate", 2);
+  addSalt(["MgSO4", "MgSO4 anhydrous", "Magnesium Sulfate", "Magnesium Sulphate", "Magnesium Sulfate Anhydrous"], 120.37, "Mg", 1, "SO4", 1);
+  addSalt(["MgSO4.7H2O", "Magnesium Sulfate.7H2O", "Magnesium Sulfate Heptahydrate", "Epsom Salt"], 246.47, "Mg", 1, "SO4", 1);
+  addSalt(["MgCl2.6H2O", "Magnesium Chloride.6H2O", "Magnesium Chloride Hexahydrate"], 203.30, "Mg", 1, "Cl", 2);
+  addSalt(["Mg(NO3)2.6H2O", "Magnesium Nitrate.6H2O", "Magnesium Nitrate Hexahydrate"], 256.41, "Mg", 1, "NO3", 2);
+  addSalt(["KNO3", "Potassium Nitrate"], 101.10, "K", 1, "NO3", 1);
+  addSalt(["KCl", "Potassium Chloride"], 74.55, "K", 1, "Cl", 1);
+  addSalt(["K2SO4", "Potassium Sulfate", "Potassium Sulphate"], 174.26, "K", 2, "SO4", 1);
+  addSalt(["K-MES", "KMES", "Potassium MES"], 233.30, "K", 1, "MES", 1);
+  addSalt(["NH4NO3", "Ammonium Nitrate"], 80.04, "NH4", 1, "NO3", 1);
+  addSalt(["(NH4)2SO4", "NH42SO4", "Ammonium Sulfate", "Ammonium Sulphate"], 132.14, "NH4", 2, "SO4", 1);
+  addSalt(["NH4Cl", "Ammonium Chloride"], 53.49, "NH4", 1, "Cl", 1);
+  addSalt(["KH2PO4", "Potassium Phosphate Monobasic", "Potassium Dihydrogen Phosphate", "Monopotassium Phosphate", "MKP"], 136.09, "K", 1, "H2PO4", 1);
+  addSalt(["K2HPO4", "Potassium Phosphate Dibasic", "Dipotassium Phosphate", "Potassium Hydrogen Phosphate"], 174.18, "K", 2, "HPO4", 1);
+  addSalt(["NH4H2PO4", "Ammonium Phosphate Monobasic", "Monoammonium Phosphate", "MAP"], 115.03, "NH4", 1, "H2PO4", 1);
+  addSalt(["(NH4)2HPO4", "NH42HPO4", "Ammonium Phosphate Dibasic", "Diammonium Phosphate", "DAP"], 132.06, "NH4", 2, "HPO4", 1);
+  addSalt(["NaCl", "Sodium Chloride"], 58.44, "Na", 1, "Cl", 1);
+  addSalt(["NaNO3", "Sodium Nitrate", "Chile Saltpeter"], 84.99, "Na", 1, "NO3", 1);
+  addSalt(["NaH2PO4.H2O", "Sodium Phosphate Monobasic.H2O", "Monosodium Phosphate Monohydrate"], 137.99, "Na", 1, "H2PO4", 1);
+  addSalt(["NaH2PO4", "Sodium Phosphate Monobasic Anhydrous", "Monosodium Phosphate"], 119.98, "Na", 1, "H2PO4", 1);
+  addSalt(["Na2HPO4", "Sodium Phosphate Dibasic Anhydrous", "Disodium Phosphate"], 141.96, "Na", 2, "HPO4", 1);
+  addSalt(["Na2HPO4.7H2O", "Sodium Phosphate Dibasic.7H2O", "Disodium Phosphate Heptahydrate"], 268.07, "Na", 2, "HPO4", 1);
+
+  // known-but-unsupported names, for a friendlier skip note
+  var KNOWN_UNSUPPORTED = ["na2edta","na2edta2h2o","fenaedta",
+    "feso47h2o","mnso44h2o","mnso4h2o","znso47h2o","h3bo3","cuso45h2o","cocl26h2o","ki",
+    "na2moo42h2o","zn(no3)26h2o","myoinositol","inositol","sucrose","agar","gellangum",
+    "glycine","thiaminehcl","nicotinicacid","pyridoxinehcl"];
+
+  function parseRecipeText(text){
+    var lines = text.split("\n");
+    var cationMM = {}, cationAnionMM = {};
+    CATIONS.forEach(function(c){ cationMM[c.key]=0; cationAnionMM[c.key]={}; });
+    var recognized = [], skippedUnsupported = [], unrecognized = [];
+    lines.forEach(function(raw){
+      var line = raw.trim();
+      if(!line) return;
+      var m = line.match(/^(.*?)[\s:,=]+([\d.]+)\s*(?:mg\s*\/?\s*l)?\s*$/i);
+      if(!m){ unrecognized.push(line); return; }
+      var name = m[1].trim();
+      var val = parseFloat(m[2]);
+      if(!name || isNaN(val)){ unrecognized.push(line); return; }
+      var key = normSalt(name);
+      var salt = SALT_DB[key];
+      if(!salt){
+        if(KNOWN_UNSUPPORTED.indexOf(key)>=0) skippedUnsupported.push(name);
+        else unrecognized.push(line);
+        return;
+      }
+      var mmol = val / salt.mw;
+      var cationMmM = mmol * salt.cCount;
+      if(!applicable(salt.cation, salt.anion)){
+        skippedUnsupported.push(name+" ("+META[salt.anion].label+" not modeled for "+salt.cation+")");
+        return;
+      }
+      cationMM[salt.cation] += cationMmM;
+      var cVal = CBY[salt.cation].valence;
+      cationAnionMM[salt.cation][salt.anion] = (cationAnionMM[salt.cation][salt.anion]||0) + cationMmM*cVal;
+      recognized.push(name+" ("+val+" mg/L)");
+    });
+    return {cationMM:cationMM, cationAnionMM:cationAnionMM, recognized:recognized, skippedUnsupported:skippedUnsupported, unrecognized:unrecognized};
+  }
+
+  function applyParsedRecipe(parsed){
+    CATIONS.forEach(function(c){
+      var st = state[c.key];
+      st.mM = parsed.cationMM[c.key];
+      st.baseMM = st.mM;
+      st.factor = 1;
+      var meqByAnion = parsed.cationAnionMM[c.key];
+      var totalMeq = c.anions.reduce(function(s,a){ return s+(meqByAnion[a]||0); }, 0);
+      var w = {};
+      c.anions.forEach(function(a){ w[a] = totalMeq>1e-9 ? (meqByAnion[a]||0)/totalMeq : (a==="Cl"?1:0); });
+      st.weights = w;
+      var locks = {}; c.anions.forEach(function(a){ locks[a]=null; });
+      st.locks = locks;
+      enforceCap(c.key);
+    });
+  }
+
+  var RECIPE_PRESETS = {
+    MS:
+      "NH4NO3: 1650\n"+
+      "KNO3: 1900\n"+
+      "CaCl2.2H2O: 440\n"+
+      "MgSO4.7H2O: 370\n"+
+      "KH2PO4: 170",
+    WPM:
+      "NH4NO3: 400\n"+
+      "Ca(NO3)2.4H2O: 556\n"+
+      "K2SO4: 990\n"+
+      "CaCl2.2H2O: 96\n"+
+      "MgSO4.7H2O: 370\n"+
+      "KH2PO4: 170",
+    B5:
+      "(NH4)2SO4: 134\n"+
+      "KNO3: 2500\n"+
+      "CaCl2.2H2O: 150\n"+
+      "MgSO4.7H2O: 250\n"+
+      "NaH2PO4.H2O: 150",
+    DKW:
+      "NH4NO3: 1416\n"+
+      "Calcium Nitrate: 1367.47\n"+
+      "CaCl2.2H2O: 149\n"+
+      "MgSO4: 361.38\n"+
+      "K2SO4: 1559\n"+
+      "KH2PO4: 265"
+  };
+
+  var recipeSelect = document.getElementById("recipeSelect");
+  var recipeText = document.getElementById("recipeText");
+  var recipeStatus = document.getElementById("recipeStatus");
+
+  function runRecipe(text){
+    var parsed = parseRecipeText(text);
+    var totalRecognized = parsed.recognized.length;
+    if(totalRecognized===0){
+      recipeStatus.textContent = "Nothing recognized — check the format (\"name: mg/L\", one salt per line).";
+      recipeStatus.classList.add("attention");
+      return;
+    }
+    applyParsedRecipe(parsed);
+    document.getElementById("shiftStatus").textContent = "";
+    renderAll();
+    var msg = "Loaded — Ca "+parsed.cationMM.Ca.toFixed(2)+" mM, Mg "+parsed.cationMM.Mg.toFixed(2)+
+              " mM, K "+parsed.cationMM.K.toFixed(2)+" mM, NH₄ "+parsed.cationMM.NH4.toFixed(2)+" mM.";
+    if(parsed.skippedUnsupported.length){
+      msg += " Not modeled here, skipped: "+parsed.skippedUnsupported.join(", ")+".";
+    }
+    if(parsed.unrecognized.length){
+      msg += " Unrecognized line(s): "+parsed.unrecognized.join(" / ")+".";
+    }
+    recipeStatus.textContent = msg;
+    recipeStatus.classList.toggle("attention", parsed.unrecognized.length>0);
+  }
+
+  recipeSelect.addEventListener("change", function(){
+    if(recipeSelect.value==="CUSTOM") return;
+    recipeText.value = RECIPE_PRESETS[recipeSelect.value];
+    runRecipe(recipeText.value);
+  });
+  document.getElementById("recipeApply").addEventListener("click", function(){
+    runRecipe(recipeText.value);
+  });
+  recipeSelect.value = "MS";
+  recipeText.value = RECIPE_PRESETS.MS;
+  runRecipe(recipeText.value);
+
+  // ---------- salt rubric (reference list, copy-to-clipboard) ----------
+  function buildSaltRubric(){
+    document.getElementById("saltCount").textContent = SALT_REGISTRY.length;
+    var sorted = SALT_REGISTRY.slice().sort(function(a,b){
+      var ca = CAT_KEYS.indexOf(a.cation), cb = CAT_KEYS.indexOf(b.cation);
+      if(ca!==cb) return ca-cb;
+      return a.display.localeCompare(b.display);
+    });
+    var body = document.getElementById("rubricBody");
+    body.innerHTML = sorted.map(function(s){
+      var safeName = s.display.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+      return "<tr><td><code class=\"salt-copy\" data-copy=\""+safeName.replace(/"/g,"&quot;")+"\">"+safeName+"</code></td>"+
+             "<td>"+CATION_LABEL[s.cation]+"</td><td>"+META[s.anion].label+"</td><td>"+s.mw.toFixed(2)+"</td>"+
+             "<td class=\"rubric-alias\">"+(s.aliases.length ? s.aliases.join(", ") : "—")+"</td></tr>";
+    }).join("");
+    body.querySelectorAll(".salt-copy").forEach(function(el){
+      el.addEventListener("click", function(){
+        var text = el.dataset.copy + ": ";
+        var orig = el.textContent;
+        function flash(label){ el.textContent = label; setTimeout(function(){ el.textContent = orig; }, 900); }
+        copyToClipboard(text).then(function(ok){ flash(ok ? "copied!" : "select & copy"); });
+      });
+    });
+  }
+  // navigator.clipboard needs a secure context (https, or localhost) and can be blocked
+  // entirely inside extension panels/sandboxed frames -- both common ways this file ends up
+  // being viewed. Fall back to the old execCommand('copy') trick via a hidden textarea, which
+  // works in far more of those situations, before giving up and asking the user to select manually.
+  function legacyCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ ta.setSelectionRange(0, text.length); }catch(e){}
+    var ok = false;
+    try{ ok = document.execCommand("copy"); }catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function copyToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+      return navigator.clipboard.writeText(text).then(function(){ return true; }).catch(function(){ return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+  buildSaltRubric();
+
+  // ---------- display mode toggle ----------
+  document.querySelectorAll("#displayToggle button").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      displayMode = btn.dataset.mode;
+      document.querySelectorAll("#displayToggle button").forEach(function(b){ b.classList.toggle("active", b===btn); });
+      renderAll();
+    });
+  });
+
+  // ---------- presets ----------
+  document.querySelectorAll(".presets button").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var mode = btn.dataset.preset;
+      if(mode==="reset" || mode==="ms"){
+        state = freshState();
+      } else if(mode==="clfree"){
+        CATIONS.forEach(function(c){
+          var st = state[c.key];
+          var others = c.anions.filter(function(a){ return a!=="Cl"; });
+          var denom = others.reduce(function(s,a){ return s+(st.weights[a]||0); }, 0);
+          if(denom>1e-9){
+            others.forEach(function(a){ st.weights[a] = (st.weights[a]||0)/denom; });
+          } else {
+            var share = 1/others.length;
+            others.forEach(function(a){ st.weights[a] = share; });
+          }
+          st.weights.Cl = 0;
+          c.anions.forEach(function(a){ st.locks[a] = null; });
+          st.locks.Cl = 0;
+          enforceCap(c.key);
+        });
+      }
+      document.getElementById("shiftStatus").textContent = "";
+      renderAll();
+    });
+  });
+
+  // ---------- shift anions ----------
+  var fromSel = document.getElementById("shiftFrom");
+  var toSel = document.getElementById("shiftTo");
+  function anionOptionLabel(a){
+    if(a==="MES") return META[a].label+" (K only)";
+    if(a==="Citrate") return META[a].label+" (Ca only)";
+    if(a==="H2PO4" || a==="HPO4") return META[a].label+" (K, NH₄, Na)";
+    return META[a].label;
+  }
+  ANIONS_ALL.forEach(function(a){
+    var o1 = document.createElement("option"); o1.value=a; o1.textContent=anionOptionLabel(a); fromSel.appendChild(o1);
+    var o2 = document.createElement("option"); o2.value=a; o2.textContent=anionOptionLabel(a); toSel.appendChild(o2);
+  });
+  fromSel.value = "SO4"; toSel.value = "Cl";
+
+  document.getElementById("shiftApply").addEventListener("click", function(){
+    var from = fromSel.value, to = toSel.value;
+    var amount = parseFloat(document.getElementById("shiftAmount").value) || 0;
+    var statusEl = document.getElementById("shiftStatus");
+    statusEl.classList.remove("attention");
+    if(from===to){ statusEl.textContent = "Pick two different anions."; statusEl.classList.add("attention"); return; }
+    if(amount<=0){ statusEl.textContent = "Enter an amount greater than zero."; statusEl.classList.add("attention"); return; }
+    var result = performShift(from, to, amount);
+    renderAll();
+    if(result.touched.length===0){
+      statusEl.textContent = "No available salt could supply "+META[from].label+" for that shift.";
+      statusEl.classList.add("attention");
+    } else {
+      var names = result.touched.map(function(k){ return k==="NH4" ? "NH₄⁺" : k+(CBY[k].valence===2?"²⁺":"⁺"); });
+      var msg = "Adjusted "+names.join(", ")+" — moved "+result.applied.toFixed(2)+" of "+amount.toFixed(2)+" meq/L from "+META[from].label+" to "+META[to].label+".";
+      if(result.shortfall>0.01){
+        msg += " Short by "+result.shortfall.toFixed(2)+" meq/L — nothing left to convert without unlocking a corner.";
+        statusEl.classList.add("attention");
+      }
+      statusEl.textContent = msg;
+    }
+  });
+})();
+</script>
+</body>
+</html>
