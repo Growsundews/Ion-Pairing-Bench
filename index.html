@@ -240,6 +240,66 @@
   .ph-detail{margin:0.5rem 0 0;font-size:0.82rem;color:var(--ink-soft);line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
   .ph-caveat{margin:0.5rem 0 0;font-size:0.78rem;color:var(--warn);line-height:1.5;}
   .ph-none{font-size:0.85rem;color:var(--ink-soft);margin:0.3rem 0 0;}
+
+  .export-controls{display:flex;flex-wrap:wrap;gap:0.5rem;}
+  .export-controls button{
+    font:inherit;font-size:0.85rem;padding:0.42rem 0.9rem;background:var(--steel);
+    color:#fff;border:none;border-radius:5px;cursor:pointer;
+  }
+  .export-controls button:hover{background:var(--steel-dim);}
+  .export-controls button:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .export-output{margin-top:0.8rem;}
+  #exportText{
+    width:100%;font:inherit;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:0.78rem;padding:0.6rem 0.7rem;border:1px solid var(--line);border-radius:6px;
+    background:#fff;color:var(--ink);resize:vertical;line-height:1.5;
+  }
+  #exportText:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .export-output-actions{display:flex;gap:0.5rem;margin-top:0.5rem;}
+  .export-output-actions button{
+    font:inherit;font-size:0.8rem;padding:0.35rem 0.7rem;background:var(--paper-raised);
+    border:1px solid var(--line);border-radius:5px;color:var(--steel);cursor:pointer;
+  }
+  .export-output-actions button:hover{border-color:var(--steel-dim);}
+  .export-output-actions button:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .export-status{margin:0.75rem 0 0;font-size:0.83rem;color:var(--ink-soft);min-height:1.2em;}
+
+  .experiment-toprow{display:flex;flex-wrap:wrap;align-items:center;gap:0.6rem;margin-bottom:0.7rem;}
+  .experiment-toprow input[type="text"]{
+    font:inherit;font-size:0.85rem;padding:0.4rem 0.6rem;border:1px solid var(--line);
+    border-radius:5px;background:#fff;color:var(--ink);flex:1;min-width:10rem;
+  }
+  .experiment-toprow button{
+    font:inherit;font-size:0.85rem;padding:0.42rem 0.9rem;background:var(--steel);
+    color:#fff;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;
+  }
+  .experiment-toprow button:hover{background:var(--steel-dim);}
+  .experiment-toprow button:focus-visible, .experiment-toprow input:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .experiment-baseline-info{font-size:0.83rem;color:var(--ink-soft);margin:0 0 0.8rem;line-height:1.5;}
+  .experiment-entry{
+    display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.7rem;margin-bottom:0.5rem;
+    background:#fff;border:1px solid var(--line-soft);border-radius:6px;font-size:0.83rem;
+  }
+  .experiment-entry .exp-name{font-weight:600;color:var(--ink);flex:1;}
+  .experiment-entry .exp-meta{color:var(--ink-soft);font-size:0.78rem;}
+  .experiment-entry button{
+    font:inherit;font-size:0.76rem;padding:0.25rem 0.6rem;background:var(--paper-raised);
+    border:1px solid var(--line);border-radius:4px;color:var(--steel);cursor:pointer;
+  }
+  .experiment-entry button:hover{border-color:var(--steel-dim);}
+  .experiment-entry button.danger{color:var(--warn);}
+  .experiment-summary-block{
+    margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line-soft);
+  }
+  .experiment-summary-block h3{font-size:0.88rem;font-weight:650;margin:0 0 0.5rem;}
+  .experiment-summary-block p{font-size:0.85rem;line-height:1.6;color:var(--ink);margin:0 0 0.6rem;}
+  .experiment-summary-block .exp-agg-title{font-size:0.8rem;color:var(--ink-soft);margin:0.7rem 0 0.3rem;}
+  .exp-chart-legend{display:flex;flex-wrap:wrap;gap:0.3rem 0.9rem;margin-top:0.6rem;font-size:0.78rem;color:var(--ink-soft);}
+  .exp-chart-legend span{display:inline-flex;align-items:center;gap:0.35rem;}
+  .exp-chart-legend .swatch{width:10px;height:10px;border-radius:2px;}
+  .chart-row-label{font-size:10px;fill:var(--ink-soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .chart-val{font-size:9.5px;fill:var(--ink-soft);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .sheets-push{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--line-soft);}
 </style>
 </head>
 <body>
@@ -353,6 +413,57 @@
     <h2>Phosphate buffer pH, in isolation</h2>
     <p class="sub">Gomori-style estimate from H₂PO₄⁻/HPO₄²⁻ alone (K, NH₄, and Na sources pooled together), as if nothing else in the medium had any say in pH.</p>
     <div id="phBufferBody"></div>
+  </div>
+
+  <div class="summary" id="experimentPanel">
+    <h2>Experiments</h2>
+    <p class="sub">Set the current mix as a baseline, then change something — a magnitude slider, a corner, whatever — and capture the result as an experiment. The summary explains what actually happened to each ion: was charge added, dispersed across several anions, or displaced away from one (usually a cap or a lock) onto others.</p>
+
+    <div class="experiment-toprow">
+      <button id="setBaselineBtn">Set current mix as baseline</button>
+      <div class="toggle-group" id="expModeToggle">
+        <button data-mode="single" class="active">Single comparison</button>
+        <button data-mode="multiple">Multiple experiments</button>
+      </div>
+    </div>
+
+    <p class="experiment-baseline-info" id="baselineInfo">No baseline set yet — dial in a starting recipe above, then click "Set current mix as baseline."</p>
+
+    <div class="experiment-toprow" id="captureRow" style="display:none;">
+      <input type="text" id="expLabelInput" placeholder="Label this experiment (optional)">
+      <button id="captureExpBtn">Capture current mix as experiment</button>
+    </div>
+
+    <div id="experimentEntries"></div>
+    <div id="experimentSummary"></div>
+
+    <div class="sheets-push" id="sheetsPush">
+      <p class="exp-agg-title">Send to Google Sheets</p>
+      <p class="sub" style="margin-bottom:0.6rem;">Paste the URL of an Apps Script Web App deployment (set up once — instructions below). Every captured experiment gets logged as rows in two tabs, "Cations" and "Anions," ready for pivot tables or charts.</p>
+      <div class="experiment-toprow">
+        <input type="text" id="sheetsUrlInput" placeholder="Apps Script Web App URL" value="https://script.google.com/macros/s/AKfycbyNLa8tCpjkgQcRD_Pr2-DzZRSXGzSB6qBdSzq0dinLbjRsapyx8StHBsmbgw5fGkUZIg/exec">
+        <button id="sheetsSendBtn">Send experiments to Sheets</button>
+      </div>
+      <p class="export-status" id="sheetsStatus"></p>
+    </div>
+  </div>
+
+  <div class="summary" id="exportPanel">
+    <h2>Export</h2>
+    <p class="sub">Pick a format below — it shows up as plain text you can select and copy, or download as a file.</p>
+    <div class="export-controls">
+      <button id="showCsv">CSV (ion values)</button>
+      <button id="showRecipe">Salt recipe</button>
+      <button id="showSummary">Summary</button>
+    </div>
+    <div class="export-output" id="exportOutput" style="display:none;">
+      <textarea id="exportText" readonly rows="10" spellcheck="false"></textarea>
+      <div class="export-output-actions">
+        <button id="exportCopyBtn">Copy to clipboard</button>
+        <button id="exportDownloadBtn">Download as file</button>
+      </div>
+    </div>
+    <p class="export-status" id="exportStatus"></p>
   </div>
 </div>
 
@@ -895,11 +1006,12 @@
     }
   }
 
-  function computeAnionTotals(){
+  function computeAnionTotals(stateObj){
+    stateObj = stateObj || state;
     var meq = {}; ANIONS_ALL.forEach(function(a){ meq[a]=0; });
     var totalCatMeq = 0;
     CATIONS.forEach(function(c){
-      var st = state[c.key];
+      var st = stateObj[c.key];
       var m = st.mM * c.valence;
       totalCatMeq += m;
       c.anions.forEach(function(a){ meq[a] += m * (st.weights[a]||0); });
@@ -908,9 +1020,10 @@
     var activeAnions = ANIONS_ALL.filter(function(a){ return meq[a] > 1e-6 || ["Cl","NO3","SO4"].indexOf(a)>=0; });
     return {meq:meq, totalCatMeq:totalCatMeq, totalAnMeq:totalAnMeq, activeAnions:activeAnions};
   }
-  function computeCationTotals(){
+  function computeCationTotals(stateObj){
+    stateObj = stateObj || state;
     var mag = {}; var total=0;
-    CATIONS.forEach(function(c){ var m=state[c.key].mM*c.valence; mag[c.key]=m; total+=m; });
+    CATIONS.forEach(function(c){ var m=stateObj[c.key].mM*c.valence; mag[c.key]=m; total+=m; });
     return {mag:mag, total:total};
   }
 
@@ -1171,7 +1284,7 @@
     var recognized = [], skippedUnsupported = [], unrecognized = [];
     lines.forEach(function(raw){
       var line = raw.trim();
-      if(!line) return;
+      if(!line || line.charAt(0)==="#") return;
       var m = line.match(/^(.*?)[\s:,=]+([\d.]+)\s*(?:mg\s*\/?\s*l)?\s*$/i);
       if(!m){ unrecognized.push(line); return; }
       var name = m[1].trim();
@@ -1408,6 +1521,461 @@
       }
       statusEl.textContent = msg;
     }
+  });
+
+  // ---------- experiments ----------
+  var CATION_LABEL_LOCAL = CATION_LABEL; // reuse existing map (Ca2+, Mg2+, ... already defined above)
+  function cloneScenario(){
+    var s = {};
+    CATIONS.forEach(function(c){
+      var st = state[c.key];
+      s[c.key] = { mM: st.mM, weights: Object.assign({}, st.weights), locks: Object.assign({}, st.locks) };
+    });
+    return s;
+  }
+  function restoreScenario(snap){
+    CATIONS.forEach(function(c){
+      var s = snap[c.key];
+      state[c.key].mM = s.mM;
+      state[c.key].weights = Object.assign({}, s.weights);
+      state[c.key].locks = Object.assign({}, s.locks);
+      enforceCap(c.key);
+    });
+    renderAll();
+  }
+  function capMaxFracFor(cap, mM){ return cap ? clamp01(cap.maxMM/mM) : 1; }
+
+  var EPS_MM = 0.01;
+  function diffCation(c, before, after){
+    var b = before[c.key], a = after[c.key];
+    var mM0=b.mM, mM1=a.mM;
+    var growthFactor = mM0>1e-9 ? mM1/mM0 : null;
+    var rows = c.anions.map(function(anion){
+      var mM0_a = mM0*(b.weights[anion]||0)*c.valence/META[anion].valence;
+      var mM1_a = mM1*(a.weights[anion]||0)*c.valence/META[anion].valence;
+      var expected_a = growthFactor!==null ? mM0_a*growthFactor : mM1_a;
+      return {anion:anion, mM0:mM0_a, mM1:mM1_a, delta:mM1_a-mM0_a, deviation:(mM1_a-expected_a)};
+    });
+    var changed = Math.abs(mM1-mM0)>1e-6 || rows.some(function(r){ return Math.abs(r.delta)>1e-6; });
+    if(!changed) return {key:c.key, changed:false};
+
+    var capHit = false;
+    if(c.cap){
+      var mx = capMaxFracFor(c.cap, mM1);
+      capHit = (a.weights[c.cap.anion]||0) >= mx-1e-6 && mx < 1-1e-6;
+    }
+    var grew = mM1 > mM0+EPS_MM, shrank = mM1 < mM0-EPS_MM;
+    var under = rows.filter(function(r){ return r.deviation < -EPS_MM; });
+    var over  = rows.filter(function(r){ return r.deviation >  EPS_MM; });
+    var pos = rows.filter(function(r){ return r.delta > EPS_MM; });
+    var neg = rows.filter(function(r){ return r.delta < -EPS_MM; });
+
+    var kind;
+    if(!grew && !shrank){
+      kind = (pos.length>0 && neg.length>0) ? "redistributed" : "unchanged";
+    } else if(under.length>0 || over.length>0){
+      kind = "displaced";
+    } else if(grew){
+      kind = pos.length>=2 ? "dispersed" : (pos.length===1 ? "added" : "unchanged");
+    } else {
+      kind = neg.length>=2 ? "withdrawn" : (neg.length===1 ? "reduced" : "unchanged");
+    }
+    return {key:c.key, changed:true, mM0:mM0, mM1:mM1, rows:rows, kind:kind, pos:pos, neg:neg, under:under, over:over, capHit:capHit};
+  }
+
+  function fmtDeltaList(list){
+    return list.map(function(r){ return META[r.anion].label+" "+(r.delta>=0?"+":"")+r.delta.toFixed(2)+" mM"; }).join(", ");
+  }
+  function sentenceForCation(c, d){
+    var label = CATION_LABEL_LOCAL[c.key];
+    var factor = d.mM0>1e-9 ? (d.mM1/d.mM0) : null;
+    var headline = label+": "+d.mM0.toFixed(2)+" \u2192 "+d.mM1.toFixed(2)+" mM"+(factor!==null ? " ("+factor.toFixed(2)+"\u00d7)" : "")+".";
+    var detail = "";
+    if(d.kind==="dispersed"){
+      detail = "The added charge dispersed across "+d.pos.length+" anions, each keeping its existing share: "+fmtDeltaList(d.pos)+".";
+    } else if(d.kind==="added"){
+      detail = "All of the added charge went to "+fmtDeltaList(d.pos)+", the only anion it was already paired with.";
+    } else if(d.kind==="displaced"){
+      var underTxt = d.under.map(function(r){ return META[r.anion].label; }).join(", ") || fmtDeltaList(d.neg);
+      var overList = d.over.length ? d.over : d.pos;
+      var overTxt = fmtDeltaList(overList);
+      var capNote = d.capHit ? (" "+underTxt+" hit its solubility cap partway through, so it couldn't keep growing in proportion.") : " a lock (or the cap) kept "+underTxt+" from moving in proportion with the rest.";
+      detail = underTxt+" grew less than a simple proportional scale-up would predict, and the rest ("+overTxt+") picked up the slack."+capNote;
+    } else if(d.kind==="reduced" || d.kind==="withdrawn"){
+      detail = "The lost charge came from "+fmtDeltaList(d.neg)+".";
+    } else if(d.kind==="redistributed"){
+      detail = "Total stayed the same, but the pairing shifted: "+fmtDeltaList(d.neg.concat(d.pos))+".";
+    }
+    return headline+(detail ? " "+detail : "");
+  }
+  function aggregateAnionLines(before, after){
+    var t0 = computeAnionTotals(before), t1 = computeAnionTotals(after);
+    var lines = [];
+    ANIONS_ALL.forEach(function(a){
+      var mM0=t0.meq[a]/META[a].valence, mM1=t1.meq[a]/META[a].valence;
+      var share0=t0.totalAnMeq>0?t0.meq[a]/t0.totalAnMeq*100:0, share1=t1.totalAnMeq>0?t1.meq[a]/t1.totalAnMeq*100:0;
+      if(Math.abs(mM1-mM0)<EPS_MM && Math.abs(share1-share0)<0.5) return;
+      lines.push(META[a].label+": "+mM0.toFixed(2)+"\u2192"+mM1.toFixed(2)+" mM ("+share0.toFixed(0)+"%\u2192"+share1.toFixed(0)+"% of pool)");
+    });
+    return lines;
+  }
+
+  function buildGroupedBarChart(rows, series){
+    var barH=11, barGap=2, groupGap=9, leftW=78, valueW=52, chartW=180;
+    var maxVal = 0;
+    rows.forEach(function(r){ series.forEach(function(s){ maxVal = Math.max(maxVal, s.values[r.key]||0); }); });
+    if(maxVal<=0) maxVal = 1;
+    var groupH = series.length*(barH+barGap)-barGap;
+    var totalH = rows.length*(groupH+groupGap)-groupGap+8;
+    var totalW = leftW+chartW+valueW+8;
+    var svg = '<svg viewBox="0 0 '+totalW+' '+totalH+'" width="100%" style="max-width:460px;display:block;">';
+    var y = 4;
+    rows.forEach(function(r){
+      svg += '<text x="'+(leftW-6)+'" y="'+(y+groupH/2+3.5)+'" text-anchor="end" class="chart-row-label">'+r.label+'</text>';
+      series.forEach(function(s,si){
+        var val = s.values[r.key]||0;
+        var w = Math.max(1.5, (val/maxVal)*chartW);
+        var by = y+si*(barH+barGap);
+        svg += '<rect x="'+leftW+'" y="'+by+'" width="'+w.toFixed(1)+'" height="'+barH+'" fill="'+s.color+'" rx="2"></rect>';
+        svg += '<text x="'+(leftW+chartW+6)+'" y="'+(by+barH-2)+'" class="chart-val">'+val.toFixed(2)+'</text>';
+      });
+      y += groupH+groupGap;
+    });
+    svg += '</svg>';
+    return svg;
+  }
+
+  var experimentBaseline = null;
+  var experimentList = [];
+  var experimentMode = "single";
+  var EXP_COLORS = ["#5C766F", "#B0793A", "#4E6D8C", "#8C5B8C"];
+
+  function renderExperiments(){
+    var baselineInfo = document.getElementById("baselineInfo");
+    var captureRow = document.getElementById("captureRow");
+    var entriesEl = document.getElementById("experimentEntries");
+    var summaryEl = document.getElementById("experimentSummary");
+
+    if(!experimentBaseline){
+      baselineInfo.textContent = "No baseline set yet — dial in a starting recipe above, then click \"Set current mix as baseline.\"";
+      captureRow.style.display = "none";
+      entriesEl.innerHTML = "";
+      summaryEl.innerHTML = "";
+      return;
+    }
+    var catTotals = computeCationTotals(experimentBaseline.state);
+    baselineInfo.textContent = "Baseline captured — total cation charge "+catTotals.total.toFixed(2)+" meq/L.";
+    captureRow.style.display = "flex";
+
+    entriesEl.innerHTML = "";
+    experimentList.forEach(function(exp, i){
+      var row = document.createElement("div");
+      row.className = "experiment-entry";
+      row.innerHTML = '<span class="exp-name">'+exp.label+'</span>'+
+        '<button data-act="load" data-i="'+i+'">Load into editor</button>'+
+        '<button data-act="remove" data-i="'+i+'" class="danger">Remove</button>';
+      entriesEl.appendChild(row);
+    });
+    var baseRow = document.createElement("div");
+    baseRow.className = "experiment-entry";
+    baseRow.innerHTML = '<span class="exp-name">Baseline</span><span class="exp-meta">reference point</span>'+
+      '<button data-act="loadbaseline">Load into editor</button>';
+    entriesEl.insertBefore(baseRow, entriesEl.firstChild);
+
+    entriesEl.querySelectorAll("[data-act='load']").forEach(function(btn){
+      btn.addEventListener("click", function(){ restoreScenario(experimentList[+btn.dataset.i].state); });
+    });
+    entriesEl.querySelectorAll("[data-act='remove']").forEach(function(btn){
+      btn.addEventListener("click", function(){ experimentList.splice(+btn.dataset.i,1); renderExperiments(); });
+    });
+    var loadBaseBtn = entriesEl.querySelector("[data-act='loadbaseline']");
+    if(loadBaseBtn) loadBaseBtn.addEventListener("click", function(){ restoreScenario(experimentBaseline.state); });
+
+    summaryEl.innerHTML = "";
+    if(experimentList.length===0){
+      summaryEl.innerHTML = '<p class="ph-none">Capture an experiment to see what changed.</p>';
+      return;
+    }
+
+    experimentList.forEach(function(exp){
+      var block = document.createElement("div");
+      block.className = "experiment-summary-block";
+      var html = "<h3>"+exp.label+" vs baseline</h3>";
+      var anyCation = false;
+      CATIONS.forEach(function(c){
+        var d = diffCation(c, experimentBaseline.state, exp.state);
+        if(d.changed){ anyCation = true; html += "<p>"+sentenceForCation(c, d)+"</p>"; }
+      });
+      if(!anyCation) html += "<p>No cation changed relative to the baseline.</p>";
+      var aggLines = aggregateAnionLines(experimentBaseline.state, exp.state);
+      if(aggLines.length){
+        html += '<p class="exp-agg-title">Whole-medium anion pool, before → after:</p><p>'+aggLines.join("<br>")+'</p>';
+      }
+      block.innerHTML = html;
+
+      var rows = ANIONS_ALL.filter(function(a){
+        var t0=computeAnionTotals(experimentBaseline.state), t1=computeAnionTotals(exp.state);
+        return (t0.meq[a]/META[a].valence)>1e-6 || (t1.meq[a]/META[a].valence)>1e-6 || ["Cl","NO3","SO4"].indexOf(a)>=0;
+      }).map(function(a){ return {key:a, label:META[a].label}; });
+      var t0 = computeAnionTotals(experimentBaseline.state), t1 = computeAnionTotals(exp.state);
+      var valuesBase = {}, valuesExp = {};
+      rows.forEach(function(r){ valuesBase[r.key]=t0.meq[r.key]/META[r.key].valence; valuesExp[r.key]=t1.meq[r.key]/META[r.key].valence; });
+      var series = [
+        {name:"Baseline", color:"#8C8F87", values:valuesBase},
+        {name:exp.label, color:EXP_COLORS[0], values:valuesExp}
+      ];
+      var chartWrap = document.createElement("div");
+      chartWrap.innerHTML = buildGroupedBarChart(rows, series) +
+        '<div class="exp-chart-legend">'+series.map(function(s){ return '<span><span class="swatch" style="background:'+s.color+'"></span>'+s.name+'</span>'; }).join("")+'</div>';
+      block.appendChild(chartWrap);
+      summaryEl.appendChild(block);
+    });
+
+    if(experimentMode==="multiple" && experimentList.length>1){
+      var comboBlock = document.createElement("div");
+      comboBlock.className = "experiment-summary-block";
+      comboBlock.innerHTML = "<h3>All experiments vs baseline</h3>";
+      var t0c = computeAnionTotals(experimentBaseline.state);
+      var rowsC = ANIONS_ALL.filter(function(a){
+        if(["Cl","NO3","SO4"].indexOf(a)>=0) return true;
+        if((t0c.meq[a]/META[a].valence)>1e-6) return true;
+        return experimentList.some(function(exp){ return (computeAnionTotals(exp.state).meq[a]/META[a].valence)>1e-6; });
+      }).map(function(a){ return {key:a, label:META[a].label}; });
+      var valuesBaseC = {}; rowsC.forEach(function(r){ valuesBaseC[r.key]=t0c.meq[r.key]/META[r.key].valence; });
+      var seriesC = [{name:"Baseline", color:"#8C8F87", values:valuesBaseC}];
+      experimentList.forEach(function(exp,i){
+        var t1c = computeAnionTotals(exp.state);
+        var v = {}; rowsC.forEach(function(r){ v[r.key]=t1c.meq[r.key]/META[r.key].valence; });
+        seriesC.push({name:exp.label, color:EXP_COLORS[(i+1)%EXP_COLORS.length], values:v});
+      });
+      var comboChart = document.createElement("div");
+      comboChart.innerHTML = buildGroupedBarChart(rowsC, seriesC) +
+        '<div class="exp-chart-legend">'+seriesC.map(function(s){ return '<span><span class="swatch" style="background:'+s.color+'"></span>'+s.name+'</span>'; }).join("")+'</div>';
+      comboBlock.appendChild(comboChart);
+      summaryEl.appendChild(comboBlock);
+    }
+  }
+
+  document.getElementById("setBaselineBtn").addEventListener("click", function(){
+    experimentBaseline = { label:"Baseline", state: cloneScenario() };
+    experimentList = [];
+    renderExperiments();
+  });
+  document.querySelectorAll("#expModeToggle button").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      experimentMode = btn.dataset.mode;
+      document.querySelectorAll("#expModeToggle button").forEach(function(b){ b.classList.toggle("active", b===btn); });
+      if(experimentMode==="single" && experimentList.length>1){
+        experimentList = experimentList.slice(-1);
+      }
+      renderExperiments();
+    });
+  });
+  document.getElementById("captureExpBtn").addEventListener("click", function(){
+    if(!experimentBaseline) return;
+    var labelInput = document.getElementById("expLabelInput");
+    var label = labelInput.value.trim() || ("Experiment "+(experimentList.length+1));
+    var entry = { label:label, state: cloneScenario() };
+    if(experimentMode==="single"){ experimentList = [entry]; }
+    else { experimentList.push(entry); }
+    labelInput.value = "";
+    renderExperiments();
+  });
+
+  // ---------- send to Google Sheets ----------
+  var SHEETS_URL_KEY = "ionPairingBench.sheetsWebhookUrl";
+  var DEFAULT_SHEETS_URL = "https://script.google.com/macros/s/AKfycbyNLa8tCpjkgQcRD_Pr2-DzZRSXGzSB6qBdSzq0dinLbjRsapyx8StHBsmbgw5fGkUZIg/exec";
+  var sheetsUrlInput = document.getElementById("sheetsUrlInput");
+  var sheetsStatus = document.getElementById("sheetsStatus");
+  try{ sheetsUrlInput.value = localStorage.getItem(SHEETS_URL_KEY) || DEFAULT_SHEETS_URL; }catch(e){ /* storage may be blocked, e.g. inside a cross-origin iframe */ }
+  sheetsUrlInput.addEventListener("change", function(){
+    try{ localStorage.setItem(SHEETS_URL_KEY, sheetsUrlInput.value.trim()); }catch(e){}
+  });
+
+  function buildSheetsPayload(){
+    var cationRows = [], anionRows = [];
+    var ts = new Date().toISOString();
+    experimentList.forEach(function(exp){
+      CATIONS.forEach(function(c){
+        var d = diffCation(c, experimentBaseline.state, exp.state);
+        if(d.changed){
+          cationRows.push([ts, exp.label, CATION_LABEL_LOCAL[c.key], d.mM0.toFixed(3), d.mM1.toFixed(3), d.kind, sentenceForCation(c,d)]);
+        }
+      });
+      var t0 = computeAnionTotals(experimentBaseline.state), t1 = computeAnionTotals(exp.state);
+      ANIONS_ALL.forEach(function(a){
+        var mM0=t0.meq[a]/META[a].valence, mM1=t1.meq[a]/META[a].valence;
+        var share0=t0.totalAnMeq>0?t0.meq[a]/t0.totalAnMeq*100:0, share1=t1.totalAnMeq>0?t1.meq[a]/t1.totalAnMeq*100:0;
+        if(Math.abs(mM1-mM0)<1e-6 && Math.abs(share1-share0)<0.05) return;
+        anionRows.push([ts, exp.label, META[a].label, mM0.toFixed(3), mM1.toFixed(3), (mM1-mM0).toFixed(3), share0.toFixed(1), share1.toFixed(1)]);
+      });
+    });
+    return {
+      cationHeader: ["timestamp","experiment","cation","mM_before","mM_after","classification","detail"],
+      cationRows: cationRows,
+      anionHeader: ["timestamp","experiment","anion","mM_before","mM_after","delta_mM","share_before_pct","share_after_pct"],
+      anionRows: anionRows
+    };
+  }
+
+  document.getElementById("sheetsSendBtn").addEventListener("click", function(){
+    var url = sheetsUrlInput.value.trim();
+    sheetsStatus.classList.remove("attention");
+    if(!url){ sheetsStatus.textContent = "Paste your Apps Script Web App URL first."; sheetsStatus.classList.add("attention"); return; }
+    if(!experimentBaseline || experimentList.length===0){ sheetsStatus.textContent = "Capture at least one experiment first."; sheetsStatus.classList.add("attention"); return; }
+    var payload = buildSheetsPayload();
+    sheetsStatus.textContent = "Sending…";
+    // Apps Script Web Apps don't return CORS headers a browser can read from a different origin,
+    // so this goes out in no-cors mode: the write still reaches the sheet, but the browser can't
+    // see whether it succeeded. If nothing shows up, it's almost always the URL or the deployment's
+    // access setting, not a silent server-side failure.
+    fetch(url, { method:"POST", mode:"no-cors", body: JSON.stringify(payload) })
+      .then(function(){
+        sheetsStatus.textContent = "Sent — check the sheet's \"Cations\" and \"Anions\" tabs. (The browser can't confirm delivery across origins; if rows don't appear, double check the URL and that the deployment is set to run as you, accessible by \"Anyone.\")";
+      })
+      .catch(function(err){
+        sheetsStatus.textContent = "Request failed before it even left the browser: "+err.message;
+        sheetsStatus.classList.add("attention");
+      });
+  });
+
+  // ---------- export ----------
+  var CATION_PLAIN = { Ca:"Ca2+", Mg:"Mg2+", K:"K+", NH4:"NH4+", Na:"Na+" };
+  var ANION_PLAIN = { Cl:"Cl-", NO3:"NO3-", SO4:"SO4(2-)", MES:"MES-", Citrate:"citrate(3-)", H2PO4:"H2PO4-", HPO4:"HPO4(2-)" };
+
+  function csvField(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
+  function csvRow(fields){ return fields.map(csvField).join(",") + "\r\n"; }
+
+  function buildCsv(){
+    var cat = computeCationTotals();
+    var totals = computeAnionTotals();
+    var rows = "";
+    rows += csvRow(["Ion Pairing Bench export", new Date().toISOString()]);
+    rows += "\r\n";
+    rows += csvRow(["Cations"]);
+    rows += csvRow(["cation","mM","meq/L","% of total cation charge"]);
+    CAT_KEYS.forEach(function(k){
+      var pct = cat.total>0 ? (cat.mag[k]/cat.total*100) : 0;
+      rows += csvRow([CATION_PLAIN[k], state[k].mM.toFixed(3), cat.mag[k].toFixed(3), pct.toFixed(1)+"%"]);
+    });
+    rows += "\r\n";
+    rows += csvRow(["Cation-anion pairings"]);
+    rows += csvRow(["cation","anion","mM (cation allocated)","meq/L","% of that cation's charge"]);
+    CATIONS.forEach(function(c){
+      var st = state[c.key];
+      c.anions.forEach(function(a){
+        var w = st.weights[a]||0;
+        var mM = st.mM*w;
+        var meq = mM*c.valence;
+        rows += csvRow([CATION_PLAIN[c.key], ANION_PLAIN[a], mM.toFixed(3), meq.toFixed(3), (w*100).toFixed(1)+"%"]);
+      });
+    });
+    rows += "\r\n";
+    rows += csvRow(["Resulting anion pool"]);
+    rows += csvRow(["anion","mM","meq/L","% of total anion charge"]);
+    totals.activeAnions.forEach(function(a){
+      var mM = totals.meq[a]/META[a].valence;
+      var pct = totals.totalAnMeq>0 ? (totals.meq[a]/totals.totalAnMeq*100) : 0;
+      rows += csvRow([ANION_PLAIN[a], mM.toFixed(3), totals.meq[a].toFixed(3), pct.toFixed(1)+"%"]);
+    });
+    rows += "\r\n";
+    rows += csvRow(["Charge balance","total cation meq/L", totals.totalCatMeq.toFixed(3), "total anion meq/L", totals.totalAnMeq.toFixed(3)]);
+    return rows;
+  }
+
+  // maps each cation-anion pair to one specific, commonly-stocked salt so the recipe export
+  // can name an actual reagent and mass. Composition math never depends on this -- it only
+  // matters for turning the current state back into something you could weigh out.
+  var PREFERRED_SALT_NAMES = [
+    ["Ca","Cl","CaCl2.2H2O"], ["Ca","NO3","Ca(NO3)2.4H2O"], ["Ca","SO4","CaSO4.2H2O"], ["Ca","Citrate","Ca3(C6H5O7)2.4H2O"],
+    ["Mg","Cl","MgCl2.6H2O"], ["Mg","NO3","Mg(NO3)2.6H2O"], ["Mg","SO4","MgSO4.7H2O"],
+    ["K","Cl","KCl"], ["K","NO3","KNO3"], ["K","SO4","K2SO4"], ["K","MES","K-MES"], ["K","H2PO4","KH2PO4"], ["K","HPO4","K2HPO4"],
+    ["NH4","Cl","NH4Cl"], ["NH4","NO3","NH4NO3"], ["NH4","SO4","(NH4)2SO4"], ["NH4","H2PO4","NH4H2PO4"], ["NH4","HPO4","(NH4)2HPO4"],
+    ["Na","Cl","NaCl"], ["Na","NO3","NaNO3"], ["Na","H2PO4","NaH2PO4.H2O"], ["Na","HPO4","Na2HPO4.7H2O"]
+  ];
+  var PREFERRED_SALT = {};
+  PREFERRED_SALT_NAMES.forEach(function(t){
+    var entry = SALT_REGISTRY.filter(function(r){ return r.display===t[2]; })[0];
+    if(entry) PREFERRED_SALT[t[0]+"|"+t[1]] = entry;
+  });
+
+  function buildSaltRecipeText(){
+    var lines = ["# exported from Ion Pairing Bench, "+new Date().toISOString()];
+    CATIONS.forEach(function(c){
+      var st = state[c.key];
+      c.anions.forEach(function(a){
+        var w = st.weights[a]||0;
+        var cationMM = st.mM*w;
+        if(cationMM<=1e-6) return;
+        var salt = PREFERRED_SALT[c.key+"|"+a];
+        if(!salt) return;
+        var saltMM = cationMM/salt.cCount;
+        var mgL = saltMM*salt.mw;
+        if(mgL<=1e-6) return;
+        lines.push(salt.display+": "+mgL.toFixed(2));
+      });
+    });
+    return lines.join("\n")+"\n";
+  }
+
+  function buildPlainSummary(){
+    var cat = computeCationTotals();
+    var totals = computeAnionTotals();
+    var lines = ["Ion Pairing Bench — "+new Date().toISOString(), ""];
+    lines.push("Cations (mM):");
+    CAT_KEYS.forEach(function(k){ lines.push("  "+CATION_PLAIN[k]+": "+state[k].mM.toFixed(2)); });
+    lines.push("");
+    lines.push("Anion pool (mM):");
+    totals.activeAnions.forEach(function(a){ lines.push("  "+ANION_PLAIN[a]+": "+(totals.meq[a]/META[a].valence).toFixed(2)); });
+    lines.push("");
+    lines.push("Charge balance: "+totals.totalCatMeq.toFixed(2)+" meq/L cation = "+totals.totalAnMeq.toFixed(2)+" meq/L anion");
+    return lines.join("\n");
+  }
+
+  function downloadFile(filename, content, mime){
+    var blob = new Blob(["\uFEFF"+content], {type: mime+";charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  var exportStatus = document.getElementById("exportStatus");
+  var exportOutput = document.getElementById("exportOutput");
+  var exportText = document.getElementById("exportText");
+  var currentExport = { content:"", filename:"", mime:"" };
+
+  function showExport(content, filename, mime){
+    currentExport = { content:content, filename:filename, mime:mime };
+    exportText.value = content;
+    exportOutput.style.display = "block";
+    exportText.focus();
+    exportText.select();
+    exportStatus.textContent = "Selected below — Ctrl/Cmd+C to copy, or use the buttons.";
+    exportStatus.classList.remove("attention");
+  }
+  document.getElementById("showCsv").addEventListener("click", function(){
+    showExport(buildCsv(), "ion-pairing-bench.csv", "text/csv");
+  });
+  document.getElementById("showRecipe").addEventListener("click", function(){
+    showExport(buildSaltRecipeText(), "ion-pairing-bench-recipe.txt", "text/plain");
+  });
+  document.getElementById("showSummary").addEventListener("click", function(){
+    showExport(buildPlainSummary(), "ion-pairing-bench-summary.txt", "text/plain");
+  });
+  document.getElementById("exportCopyBtn").addEventListener("click", function(){
+    copyToClipboard(currentExport.content).then(function(ok){
+      exportStatus.textContent = ok ? "Copied to clipboard." : "Couldn't copy automatically — the text above is already selected, so Ctrl/Cmd+C should still work.";
+      exportStatus.classList.toggle("attention", !ok);
+    });
+  });
+  document.getElementById("exportDownloadBtn").addEventListener("click", function(){
+    downloadFile(currentExport.filename, currentExport.content, currentExport.mime);
+    exportStatus.textContent = "Downloaded "+currentExport.filename+".";
+    exportStatus.classList.remove("attention");
   });
 })();
 </script>
