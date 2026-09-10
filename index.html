@@ -422,8 +422,8 @@
     <div class="experiment-toprow">
       <button id="setBaselineBtn">Set current mix as baseline</button>
       <div class="toggle-group" id="expModeToggle">
-        <button data-mode="single" class="active">Single comparison</button>
-        <button data-mode="multiple">Multiple experiments</button>
+        <button data-mode="single">Single comparison</button>
+        <button data-mode="multiple" class="active">Multiple experiments</button>
       </div>
     </div>
 
@@ -1647,7 +1647,7 @@
 
   var experimentBaseline = null;
   var experimentList = [];
-  var experimentMode = "single";
+  var experimentMode = "multiple";
   var EXP_COLORS = ["#5C766F", "#B0793A", "#4E6D8C", "#8C5B8C"];
 
   function renderExperiments(){
